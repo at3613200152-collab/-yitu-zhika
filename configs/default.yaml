@@ -1,0 +1,85 @@
+# ============================================================
+# 一图知卡 - 默认超参配置
+# ============================================================
+
+# 阶段一：NIR图像生成器
+generator:
+  model: "unet"               # 生成器架构: unet
+  input_channels: 3            # RGB输入通道数
+  output_channels: 1            # NIR输出通道数
+  base_features: 64             # 编码器首层特征数
+  lr: 0.0002                   # 学习率
+  beta1: 0.5                   # Adam beta1
+  beta2: 0.999                 # Adam beta2
+  epochs: 200                  # 训练轮数
+  batch_size: 16               # 批大小
+  lambda_l1: 100.0             # L1重建损失权重
+  lambda_gan: 1.0              # GAN对抗损失权重
+  lambda_perceptual: 10.0      # 感知损失权重
+  save_interval: 10            # 每N个epoch保存checkpoint
+  scheduler: "linear"          # 学习率调度: linear / cosine / step
+
+# 阶段二：多任务营养估计
+multitask:
+  backbone: "resnet50"         # 骨干网络
+  pretrained: true             # 是否加载ImageNet预训练
+  num_classes: 61              # 食物分类数（HSIFoodIngr-61类）
+  input_channels: 4            # RGB(3) + NIR(1) = 4通道
+  lr: 0.001                    # 学习率
+  beta1: 0.9                   # Adam beta1
+  beta2: 0.999                 # Adam beta2
+  epochs: 100                  # 训练轮数
+  batch_size: 32               # 批大小
+  lambda_cls: 1.0              # 分类损失权重
+  lambda_cal: 1.0              # 卡路里回归损失权重
+  lambda_weight: 0.5           # 重量回归损失权重
+  lambda_mape: 0.1             # MAPE损失权重
+  save_interval: 5             # 每N个epoch保存checkpoint
+  scheduler: "cosine"          # 学习率调度
+
+# 数据配置
+data:
+  hsifoodingr_path: "./data/HSIFoodIngr-64"   # HSIFoodIngr数据集路径
+  nutrition5k_path: "./data/Nutrition5k"       # Nutrition5k数据集路径
+  img_size: 256                # 图像统一尺寸
+  num_workers: 4               # DataLoader工作进程数
+  train_ratio: 0.8             # 训练集比例
+  augmentation: true           # 是否启用数据增强
+
+# 食谱推荐
+recipe:
+  tdee_default: 2000           # 默认TDEE (kcal)
+  macro_ratios:                # 宏量营养素比例
+    carb: 0.50                 # 碳水化合物
+    protein: 0.25              # 蛋白质
+    fat: 0.25                  # 脂肪
+  meal_ratios:                 # 三餐热量分配
+    breakfast: 0.30
+    lunch: 0.40
+    dinner: 0.30
+  max_repeat_per_ingredient: 3  # 每周同一食材最大重复次数
+  calorie_tolerance: 200        # 每日热量允许偏差 (kcal)
+  llm_backend: "openai"        # LLM后端: openai / local
+  llm_model: "gpt-4"           # LLM模型名
+
+# Gradio应用
+app:
+  host: "0.0.0.0"
+  port: 7860
+  share: false                 # 是否创建公开链接
+  title: "一图知卡 - 食物热量分析"
+
+# 评估
+evaluation:
+  compute_psnr: true
+  compute_ssim: true
+  compute_mape: true
+  compute_rmse: true
+  compute_mae: true
+
+# 通用
+seed: 42                       # 随机种子
+device: "cuda"                 # 计算设备: cuda / cpu
+output_dir: "./output"         # 输出目录
+checkpoint_dir: "./checkpoints" # checkpoint保存目录
+log_dir: "./logs"              # TensorBoard日志目录
