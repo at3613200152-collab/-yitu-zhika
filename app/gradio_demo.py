@@ -36,7 +36,30 @@ def create_demo():
         nonlocal pipeline
         if pipeline is None:
             from app.pipeline import InferencePipeline
-            pipeline = InferencePipeline(device="auto")
+
+            # 自动检测checkpoint
+            import glob as _glob
+            gen_ckpt = None
+            for pattern in ['checkpoints/phase1/final_model.pth',
+                            'checkpoints/phase1/epoch_*.pth']:
+                matches = sorted(_glob.glob(pattern))
+                if matches:
+                    gen_ckpt = matches[-1]  # 取最新的
+                    break
+
+            mt_ckpt = None
+            for pattern in ['checkpoints/multitask/best_model.pt',
+                            'checkpoints/multitask/checkpoint_epoch_*.pt']:
+                matches = sorted(_glob.glob(pattern))
+                if matches:
+                    mt_ckpt = matches[0] if 'best' in matches[0] else matches[-1]
+                    break
+
+            pipeline = InferencePipeline(
+                generator_ckpt=gen_ckpt,
+                multitask_ckpt=mt_ckpt,
+                device="auto",
+            )
         return pipeline
 
     # ========= 食物分析函数 =========
