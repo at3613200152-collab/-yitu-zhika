@@ -28,8 +28,8 @@ from typing import Dict
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from models.multitask.resnet_multitask import ResNetMultiTask
-from models.multitask.losses import MultiTaskLoss
+from models.resnet_multitask import ResNetMultiTask
+from models.multitask_losses import MultiTaskLoss
 from data.nutrition5k_loader import create_nutrition5k_dataloader
 from training.checkpoint import save_checkpoint, load_checkpoint, find_latest_checkpoint
 
@@ -113,20 +113,29 @@ def train_multitask(config: Dict, resume: bool = False, generator_ckpt: str = No
     # 加载阶段一生成器(用于从RGB生成NIR)
     generator = None
     if generator_ckpt and os.path.exists(generator_ckpt):
-        from models.generator.unet import UNetGenerator
+        from models.nir_generator import UNetGenerator
         generator = UNetGenerator(
-            input_channels=3, output_channels=1
+            in_channels=3, out_channels=1, base_channels=64
         ).to(device)
         ckpt = torch.load(generator_ckpt, map_location=device)
-        gen_state = ckpt.get('model_state_dict', ckpt)
-        # 只加载生成器权重
-        gen_state = {k.replace('generator.', ''): v
-                     for k, v in gen_state.items() if k.startswith('generator.')}
-        generator.load_state_dict(gen_state, strict=False)
+        gen_state = ckpt.get('G_state_dict', ckpt.get('generator_state_dict', ckpt.get('model_state_dict', ckpt)))
+        # 加载匹配的权重，报告不匹配的键
+        result = generator.load_state_dict(gen_state, strict=False)
+        if result.missing_keys:
+            print(f"  ⚠️ Missing keys (random init): {len(result.missing_keys)} layers")
+        if result.unexpected_keys:
+            print(f"  ⚠️ Unexpected keys (ignored): {len(result.unexpected_keys)} layers")
+        if not result.missing_keys and not result.unexpected_keys:
+            print(f"  ✅ All keys matched perfectly")
         generator.eval()
         print("NIR生成器已加载")
+        # ImageNet归一化常量(用于生成器值域适配)
+        mean_t = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to(device)
+        std_t = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(device)
     else:
         print("未加载NIR生成器，将使用零通道NIR进行训练")
+        mean_t = None
+        std_t = None
 
     # 损失函数
     criterion = MultiTaskLoss(
@@ -189,11 +198,15 @@ def train_multitask(config: Dict, resume: bool = False, generator_ckpt: str = No
 
             # 生成NIR通道(如果生成器可用)
             if generator is not None:
+                # images在ImageNet归一化域, 生成器期望[-1,1]域
+                rgb_01 = images * std_t + mean_t  # [0,1]
+                rgb_norm = rgb_01 * 2 - 1          # [-1,1]
                 with torch.no_grad():
-                    nir = generator(images)
-                # 反归一化images以适配4通道输入
-                # 注意: 如果images已归一化，需要适配处理
-                input_4ch = torch.cat([images, nir], dim=1)
+                    nir = generator(rgb_norm)      # [-1,1]
+                # NIR: [-1,1] → [0,1] → ImageNet域
+                nir_01 = (nir + 1) / 2
+                nir_imagenet = (nir_01 - 0.485) / 0.229
+                input_4ch = torch.cat([images, nir_imagenet], dim=1)
             else:
                 # 无生成器时，用零通道
                 nir_zero = torch.zeros(images.shape[0], 1, images.shape[2], images.shape[3]).to(device)
@@ -235,8 +248,12 @@ def train_multitask(config: Dict, resume: bool = False, generator_ckpt: str = No
                 nutrition_gt = torch.stack([calories, mass], dim=1)
 
                 if generator is not None:
-                    nir = generator(images)
-                    input_4ch = torch.cat([images, nir], dim=1)
+                    rgb_01 = images * std_t + mean_t
+                    rgb_norm = rgb_01 * 2 - 1
+                    nir = generator(rgb_norm)
+                    nir_01 = (nir + 1) / 2
+                    nir_imagenet = (nir_01 - 0.485) / 0.229
+                    input_4ch = torch.cat([images, nir_imagenet], dim=1)
                 else:
                     nir_zero = torch.zeros(images.shape[0], 1, images.shape[2], images.shape[3]).to(device)
                     input_4ch = torch.cat([images, nir_zero], dim=1)

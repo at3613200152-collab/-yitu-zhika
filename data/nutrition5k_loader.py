@@ -88,6 +88,14 @@ class Nutrition5kDataset(Dataset):
                     **self.metadata[dish_id],
                 })
 
+        # 构建类别→索引映射
+        categories = sorted(set(s["category"] for s in self.samples))
+        self.category_to_idx = {cat: i for i, cat in enumerate(categories)}
+        self.num_categories = len(categories)
+        if len(categories) <= 1:
+            print(f"  ⚠️ Only {len(categories)} category found: {categories}. "
+                  f"Add 'category' column to CSV for proper classification.")
+
         # 数据增强
         if augmentation and split == "train":
             self.transform = transforms.Compose([
@@ -114,12 +122,16 @@ class Nutrition5kDataset(Dataset):
             dict: {dish_id: {calories, mass, category, ingredients, ...}}
         """
         if metadata_csv is None:
-            # 自动搜索CSV文件
+            # 自动搜索CSV文件: 先查dish_metadata/子目录, 再查根目录
             metadata_dir = os.path.join(self.root_dir, "dish_metadata")
             if os.path.isdir(metadata_dir):
                 csv_files = [f for f in os.listdir(metadata_dir) if f.endswith('.csv')]
                 if csv_files:
                     metadata_csv = os.path.join(metadata_dir, csv_files[0])
+            if metadata_csv is None:
+                root_csv = os.path.join(self.root_dir, "dishes.csv")
+                if os.path.exists(root_csv):
+                    metadata_csv = root_csv
 
         metadata = {}
 
@@ -134,9 +146,9 @@ class Nutrition5kDataset(Dataset):
                         metadata[dish_id] = {
                             "calories": float(row.get('total_calories', 0)),
                             "mass": float(row.get('total_mass', 0)),
-                            "protein": float(row.get('total_protein_g', 0)),
-                            "carb": float(row.get('total_carb_g', 0)),
-                            "fat": float(row.get('total_fat_g', 0)),
+                            "protein": float(row.get('total_protein_g', row.get('total_protein', 0))),
+                            "carb": float(row.get('total_carb_g', row.get('total_carb', 0))),
+                            "fat": float(row.get('total_fat_g', row.get('total_fat', 0))),
                             "category": row.get('category', 'unknown'),
                             "ingredients": row.get('ingredients', ''),
                         }
@@ -168,9 +180,10 @@ class Nutrition5kDataset(Dataset):
         candidates = [
             os.path.join(self.root_dir, "imagery", dish_id, "rgb.png"),
             os.path.join(self.root_dir, "imagery", dish_id, "rgb.jpg"),
-            os.path.join(self.root_dir, "imagery", dish_id, "rgb.png"),
             os.path.join(self.root_dir, "images", f"{dish_id}.png"),
             os.path.join(self.root_dir, "images", f"{dish_id}.jpg"),
+            os.path.join(self.root_dir, "images", f"{dish_id}_rgb.jpg"),
+            os.path.join(self.root_dir, "images", f"{dish_id}_rgb.png"),
         ]
         for path in candidates:
             if os.path.exists(path):
@@ -210,6 +223,7 @@ class Nutrition5kDataset(Dataset):
             "carb": float(sample["carb"]),
             "fat": float(sample["fat"]),
             "category": sample["category"],
+            "category_idx": self.category_to_idx.get(sample["category"], 0),
             "ingredients": sample["ingredients"],
             "dish_id": sample["dish_id"],
         }
