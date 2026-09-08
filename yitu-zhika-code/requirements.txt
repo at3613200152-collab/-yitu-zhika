@@ -19,5 +19,10 @@ PyYAML>=6.0
 # Logging
 tensorboard>=2.12.0
 
+# Web 服务（部署必需）
+flask>=3.0.0
+gunicorn>=21.2.0
+python-dotenv>=1.0.0
+
 # Data download (可选)
 kaggle>=1.5.0
