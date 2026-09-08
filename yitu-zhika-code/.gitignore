@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Data (体积大，不入库)
+data/
+!data/.gitkeep
+
+# Checkpoints (模型权重，体积大)
+checkpoints/
+
+# Logs
+logs/
+*.log
+phase1_*.log
+phase2_*.log
+download_data.log
+
+# Results (评估产物)
+results/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large files
+*.tar
+*.tar.gz
+*.zip
+full_structure.txt

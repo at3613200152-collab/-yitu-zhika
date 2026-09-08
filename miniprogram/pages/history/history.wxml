@@ -1,0 +1,29 @@
+<view class="container">
+  <view class="title">历史记录</view>
+
+  <view wx:if="{{history.length === 0}}" class="empty">
+    <text>暂无记录</text>
+  </view>
+
+  <view wx:for="{{history}}" wx:key="id" class="card"
+        bindtap="viewDetail" data-id="{{item.id}}">
+    <view class="history-row">
+      <image src="{{item.imagePath}}" mode="aspectFill" class="history-thumb"></image>
+      <view class="history-info">
+        <view class="history-cat">{{item.result.category_name || '未知'}}</view>
+        <view class="history-kcal">{{item.result.calories}} kcal</view>
+        <view class="history-time">{{item.timestamp}}</view>
+        <view class="warning" wx:if="{{item.corrected}}">已修正</view>
+        <view class="warning" wx:if="{{item.savedLocal}}">仅本地保存</view>
+      </view>
+    </view>
+  </view>
+
+  <button class="btn-primary" wx:if="{{history.length > 0}}" bindtap="clearHistory">
+    清空历史
+  </button>
+
+  <view class="disclaimer">
+    历史记录仅保存在本地设备，删除后无法恢复。
+  </view>
+</view>

@@ -1,0 +1,9 @@
+flask>=2.0.0
+flask-cors>=4.0.0
+Pillow>=9.0.0
+numpy>=1.23.0
+torch>=2.0.0
+torchvision>=0.15.0
+PyYAML>=6.0
+tqdm>=4.64.0
+matplotlib>=3.5.0

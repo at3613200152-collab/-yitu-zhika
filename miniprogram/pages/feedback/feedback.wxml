@@ -1,0 +1,20 @@
+<view class="container" wx:if="{{record}}">
+  <view class="card">
+    <view class="title">补充反馈</view>
+    <view class="label">记录 ID</view>
+    <view>{{record.id}}</view>
+
+    <view class="label">原识别类别</view>
+    <view>{{record.result.category_name}}</view>
+
+    <view class="label">原识别热量</view>
+    <view>{{record.result.calories}} kcal</view>
+
+    <view class="label">补充说明（如做法、份量等）</view>
+    <textarea class="input" placeholder="请输入补充说明"
+              bindinput="onNotesInput" value="{{notes}}"
+              style="height:200rpx;"></textarea>
+
+    <button class="btn-primary" bindtap="submit">提交反馈</button>
+  </view>
+</view>

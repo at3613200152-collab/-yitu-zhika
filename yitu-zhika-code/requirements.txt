@@ -1,0 +1,23 @@
+# 一图知卡 — Python 依赖
+# 环境: conda env "yitu" / Python 3.11.16 / PyTorch 2.7.1+cu128
+
+# Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Scientific
+numpy>=1.24.0
+scipy>=1.10.0
+matplotlib>=3.7.0
+
+# Image
+Pillow>=9.0.0
+
+# Config
+PyYAML>=6.0
+
+# Logging
+tensorboard>=2.12.0
+
+# Data download (可选)
+kaggle>=1.5.0

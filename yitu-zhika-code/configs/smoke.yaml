@@ -1,0 +1,80 @@
+# ============================================================
+# 一图知卡 - 冒烟测试配置（跑通用，1 epoch 验证全链路）
+# 基于 default.yaml v2 (5维回归, 11类)，只改:
+#   epochs=1 / save_interval=1 / num_workers=0
+# 用途: 验证训练脚本与数据/模型/损失/日志全链路无 bug
+# ============================================================
+
+generator:
+  model: "unet"
+  input_channels: 3
+  output_channels: 1
+  base_filters: 64
+  lr: 0.0002
+  beta1: 0.5
+  beta2: 0.999
+  epochs: 1                   # 冒烟: 只跑1轮
+  batch_size: 16
+  lambda_l1: 100.0
+  lambda_gan: 1.0
+  lambda_perceptual: 10.0
+  save_interval: 1            # 冒烟: 每轮都存
+  scheduler: "linear"
+
+multitask:
+  backbone: "resnet50"
+  pretrained: true
+  num_classes: 11              # 与 default.yaml v2 一致 (dishes_categorized.csv)
+  input_channels: 4
+  lr: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epochs: 1                   # 冒烟: 只跑1轮
+  batch_size: 16
+  num_workers: 0              # 冒烟: 0方便排错(报错堆栈直接在主进程)
+  lambda_cls: 1.0
+  lambda_cal: 1.0
+  lambda_weight: 0.5
+  lambda_protein: 0.3         # 与 v2 一致
+  lambda_carb: 0.3
+  lambda_fat: 0.3
+  lambda_mape: 0.1
+  save_interval: 1
+  early_stopping_patience: 20
+  scheduler: "cosine"
+
+data:
+  hsifoodingr_path: "./data/HSIFoodIngr-64"
+  nutrition5k_path: "./data/Nutrition5k"
+  img_size: 256
+  num_workers: 0              # 冒烟: 0 方便排错
+  train_ratio: 0.8
+  augmentation: false        # 冒烟: 关闭增强以简化
+
+recipe:
+  tdee_default: 2000
+  macro_ratios: {carb: 0.50, protein: 0.25, fat: 0.25}
+  meal_ratios: {breakfast: 0.30, lunch: 0.40, dinner: 0.30}
+  max_repeat_per_ingredient: 3
+  calorie_tolerance: 200
+  llm_backend: "openai"
+  llm_model: "gpt-4"
+
+app:
+  host: "0.0.0.0"
+  port: 7860
+  share: false
+  title: "一图知卡 - 食物热量分析"
+
+evaluation:
+  compute_psnr: true
+  compute_ssim: true
+  compute_mape: true
+  compute_rmse: true
+  compute_mae: true
+
+seed: 42
+device: "cuda"
+output_dir: "./output_smoke"
+checkpoint_dir: "./checkpoints_smoke"   # 冒烟产物单独放, 不污染正式训练目录
+log_dir: "./logs_smoke"

@@ -1,0 +1,76 @@
+# ===== 敏感文件（绝不入库）=====
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# ===== 模型权重（用 Git LFS 或 Releases 上传）=====
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+checkpoints/
+weights/
+models/best*/
+
+# ===== 数据集（体积大）=====
+data/
+!data/.gitkeep
+yitu-zhika-code/data/
+!yitu-zhika-code/data/.gitkeep
+
+# ===== 日志 =====
+logs/
+*.log
+backend_stdout.log
+backend_stderr.log
+trae-agent-toolhost/
+
+# ===== 评估产物 =====
+results/
+yitu-zhika-code/results/
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.venv/
+venv/
+
+# ===== IDE / 编辑器 =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 大型二进制 ======
+*.tar
+*.tar.gz
+*.zip
+*.7z
+full_structure.txt
+
+# ===== 临时文件 =====
+*.tmp
+*.bak
+*.orig
+
+# ===== TRAE / Claude 工具产物 =====
+.trae-html-share-packages/
+yitu-zhika-code-trea/
+cloudflared.exe
+ngrok/

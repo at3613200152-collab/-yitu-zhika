@@ -1,0 +1,90 @@
+# ============================================================
+# 一图知卡 - 默认超参配置 (v2 — 5维回归)
+# ============================================================
+
+# 阶段一：NIR图像生成器
+generator:
+  model: "unet"
+  input_channels: 3
+  output_channels: 1
+  base_filters: 64
+  lr: 0.0002
+  beta1: 0.5
+  beta2: 0.999
+  epochs: 200
+  batch_size: 8
+  lambda_l1: 100.0
+  lambda_gan: 1.0
+  lambda_perceptual: 10.0
+  save_interval: 10
+  scheduler: "linear"
+
+# 阶段二：多任务营养估计 (v2: 5维回归)
+multitask:
+  backbone: "resnet50"
+  pretrained: true
+  num_classes: 11              # dishes_categorized.csv中的全局类别数
+  input_channels: 4           # RGB(3) + NIR(1)
+  lr: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  epochs: 100
+  batch_size: 16               # RTX 5060 8GB建议16
+  num_workers: 2              # Windows建议小一点
+  lambda_cls: 1.0
+  lambda_cal: 1.0             # 卡路里L1权重
+  lambda_weight: 0.5          # 重量L1权重
+  lambda_protein: 0.3         # 蛋白质L1权重 (新增)
+  lambda_carb: 0.3            # 碳水L1权重 (新增)
+  lambda_fat: 0.3             # 脂肪L1权重 (新增)
+  lambda_mape: 0.1
+  save_interval: 5
+  early_stopping_patience: 20
+  scheduler: "cosine"
+
+# 数据配置
+data:
+  hsifoodingr_path: "./data/HSIFoodIngr-64"
+  nutrition5k_path: "./data/Nutrition5k"
+  img_size: 256
+  num_workers: 2
+  train_ratio: 0.8
+  augmentation: true
+
+# 食谱推荐
+recipe:
+  tdee_default: 2000
+  macro_ratios:
+    carb: 0.50
+    protein: 0.25
+    fat: 0.25
+  meal_ratios:
+    breakfast: 0.30
+    lunch: 0.40
+    dinner: 0.30
+  max_repeat_per_ingredient: 3
+  calorie_tolerance: 200
+  llm_backend: "openai"
+  llm_model: "gpt-4"
+
+# Gradio应用
+app:
+  host: "0.0.0.0"
+  port: 7860
+  share: false
+  title: "一图知卡 - 食物热量分析"
+
+# 评估
+evaluation:
+  compute_psnr: true
+  compute_ssim: true
+  compute_mape: true
+  compute_rmse: true
+  compute_mae: true
+
+# 通用
+seed: 42
+device: "cuda"
+output_dir: "./output"
+checkpoint_dir: "./checkpoints/multitask_v2"
+log_dir: "./logs/multitask_v2"

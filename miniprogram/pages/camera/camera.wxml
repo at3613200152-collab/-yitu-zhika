@@ -1,0 +1,25 @@
+<view class="container">
+  <view class="title">拍照识别</view>
+
+  <view class="preview" wx:if="{{imagePath}}">
+    <image src="{{imagePath}}" mode="aspectFit" class="preview-img"></image>
+  </view>
+
+  <view class="placeholder" wx:else>
+    <text class="placeholder-text">请拍照或从相册选择</text>
+  </view>
+
+  <view class="btn-row">
+    <button class="btn-primary" bindtap="takePhoto" disabled="{{loading}}">拍照</button>
+    <button class="btn-primary" bindtap="chooseFromAlbum" disabled="{{loading}}">相册</button>
+  </view>
+
+  <button class="btn-primary submit-btn" bindtap="submit"
+          disabled="{{loading || !imagePath}}">
+    {{loading ? '识别中...' : '开始识别'}}
+  </button>
+
+  <view class="disclaimer">
+    本工具仅提供食物识别与热量参考，非医疗诊断；具体方案请咨询营养师。
+  </view>
+</view>

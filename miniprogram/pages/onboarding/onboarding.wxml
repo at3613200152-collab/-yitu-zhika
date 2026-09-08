@@ -1,0 +1,34 @@
+<!-- pages/onboarding/onboarding.wxml - 首次进入一次性问卷 -->
+<view class="container">
+  <view class="card">
+    <view class="title">欢迎使用一图知卡</view>
+    <view class="subtitle">回答 3 个问题，帮我们提供更适合你的饮食参考</view>
+
+    <view class="section-title">1. 你的饮食目标方向是？</view>
+    <view class="option-row">
+      <button class="opt {{goal === 'maintain' ? 'opt-active' : ''}}" bindtap="selectGoal" data-v="maintain">维持现状</button>
+      <button class="opt {{goal === 'reduce' ? 'opt-active' : ''}}" bindtap="selectGoal" data-v="reduce">减少摄入</button>
+      <button class="opt {{goal === 'gain' ? 'opt-active' : ''}}" bindtap="selectGoal" data-v="gain">增加摄入</button>
+    </view>
+    <view class="hint">不会生成减重处方，仅用于校准参考范围</view>
+
+    <view class="section-title">2. 是否有忌口或过敏？</view>
+    <view class="checkbox-row">
+      <view class="chip {{allergens.includes('egg') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="egg">蛋</view>
+      <view class="chip {{allergens.includes('milk') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="milk">奶</view>
+      <view class="chip {{allergens.includes('seafood') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="seafood">海鲜</view>
+      <view class="chip {{allergens.includes('nut') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="nut">坚果</view>
+      <view class="chip {{allergens.includes('gluten') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="gluten">麸质</view>
+      <view class="chip {{allergens.includes('spicy') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="spicy">辣</view>
+    </view>
+
+    <view class="section-title">3. 是否希望收到饮食建议？</view>
+    <view class="option-row">
+      <button class="opt {{advice === 'yes' ? 'opt-active' : ''}}" bindtap="selectAdvice" data-v="yes">是</button>
+      <button class="opt {{advice === 'no' ? 'opt-active' : ''}}" bindtap="selectAdvice" data-v="no">否，只要识别</button>
+    </view>
+  </view>
+
+  <button class="btn-primary" bindtap="finishOnboarding">完成</button>
+  <button class="btn-text" bindtap="skipOnboarding">跳过</button>
+</view>

@@ -1,0 +1,4 @@
+# Additional dependencies for scripts/capsicum_job.py and train_capsicum.py.
+# Use the existing yitu PyTorch 2.7.1+cu128 environment, not a fresh CPU torch.
+requests==2.34.2
+scikit-image==0.25.2

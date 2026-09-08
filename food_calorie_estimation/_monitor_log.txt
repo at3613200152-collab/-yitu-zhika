@@ -1,0 +1,82 @@
+=== Monitoring C:\Users\user\AppData\Local\Temp\trae-agent-toolhost\jobs\job-2a261ed0579d40d0a8926d8b52cdc866\output.log ===
+start: 17:57:21
+[17:57:21] <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><S S="Error">python.exe : _x000D__x000A_</S><S S="Error">At line:15 char:2123_x000D__x000A_</S><S S="Error">+ ... stimat
+[17:57:21] Weight:   MAPE=181.39%, RMSE=559.15 g
+[17:57:21] Accuracy: 8.65%
+[17:57:21] Saved best model with Cal MAPE=81.12%
+[17:57:21] ████▏ | 63/77 [00:31&lt;00:07,  1.98it/s, Loss=4.0712]_x000D__x000A_</S><S S="Error">Epoch 0 [Val]:  83%|████████▎ | 64/77 [00:31&lt;00:06,  2.03it/s, Loss=4.0712]_x000D__x000A_</S><S S="Error">Epoch 
+[17:57:21] Weight:   MAPE=92.61%, RMSE=248.49 g
+[17:57:21] Accuracy: 7.18%
+[17:57:21] Saved best model with Cal MAPE=64.68%
+[17:57:21] 0A_</S><S S="Error">Epoch 1 [Val]:  69%|██████▉   | 53/77 [00:25&lt;00:11,  2.08it/s, Loss=4.3599]_x000D__x000A_</S><S S="Error">Epoch 1 [Val]:  70%|███████   | 54/77 [00:25&lt;00:10,  2.09it/s, Loss=
+[17:57:21] Weight:   MAPE=744.04%, RMSE=2771.48 g
+[17:57:21] Accuracy: 8.65%
+[17:57:21] [Val]:  92%|█████████▏| 71/77 [00:32&lt;00:02,  2.20it/s, Loss=4.5099]_x000D__x000A_</S><S S="Error">Epoch 2 [Val]:  94%|█████████▎| 72/77 [00:32&lt;00:02,  2.21it/s, Loss=4.5099]_x000D__x000A_</S><S 
+[17:57:21] Weight:   MAPE=215.45%, RMSE=423.37 g
+[17:57:21] Accuracy: 9.62%
+[17:57:21] 0]_x000D__x000A_</S><S S="Error">Epoch 3 [Val]:  79%|███████▉  | 61/77 [00:28&lt;00:07,  2.19it/s, Loss=3.8189]_x000D__x000A_</S><S S="Error">Epoch 3 [Val]:  81%|████████  | 62/77 [00:28&lt;00:06,  2.
+  [17:57:21] ckpt: ['best.pth']
+  [17:57:36] ckpt: ['best.pth']
+  [17:57:51] ckpt: ['best.pth']
+  [17:58:06] ckpt: ['best.pth']
+  [17:58:21] ckpt: ['best.pth']
+  [17:58:36] ckpt: ['best.pth']
+  [17:58:51] ckpt: ['best.pth']
+  [17:59:06] ckpt: ['best.pth']
+  [17:59:21] ckpt: ['best.pth']
+  [17:59:36] ckpt: ['best.pth']
+  [17:59:51] ckpt: ['best.pth']
+  [18:00:06] ckpt: ['best.pth']
+  [18:00:21] ckpt: ['best.pth']
+  [18:00:36] ckpt: ['best.pth']
+  [18:00:51] ckpt: ['best.pth']
+  [18:01:06] ckpt: ['best.pth']
+  [18:01:21] ckpt: ['best.pth']
+  [18:01:36] ckpt: ['best.pth']
+  [18:01:51] ckpt: ['best.pth']
+  [18:02:06] ckpt: ['best.pth']
+  [18:02:21] ckpt: ['best.pth']
+[18:02:36] 06:37&lt;00:10,  1.68s/it, Loss=3.9361, Acc=11.13%, Cal_L=0.67]_x000D__x000A_</S><S S="Error">Epoch 4 [Train]:  98%|█████████▊| 302/307 [06:37&lt;00:08,  1.68s/it, Loss=3.9361, Acc=11.13%, Cal_L=0.67]
+  [18:02:36] ckpt: ['best.pth']
+  [18:02:51] ckpt: ['best.pth']
+[18:03:06] Weight:   MAPE=67.65%, RMSE=207.96 g
+[18:03:06] Accuracy: 13.38%
+[18:03:06] Saved best model with Cal MAPE=45.47%
+  [18:03:06] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:03:21] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:03:36] ckpt: ['best.pth', 'epoch_4.pth']
+[18:03:51] s, Loss=3.7042]_x000D__x000A_</S><S S="Error">Epoch 4 [Val]: 100%|██████████| 77/77 [00:43&lt;00:00,  1.95it/s, Loss=3.7042]_x000D__x000A_</S><S S="Error">Epoch 4 [Val]: 100%|██████████| 77/77 [00:43&
+  [18:03:51] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:04:06] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:04:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:04:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:04:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:05:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:05:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:05:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:05:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:06:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:06:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:06:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:06:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:07:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:07:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:07:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:07:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:08:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:08:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:08:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:08:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:09:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:09:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:09:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:09:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:10:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:10:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:10:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:10:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:11:07] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:11:22] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:11:37] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:11:52] ckpt: ['best.pth', 'epoch_4.pth']
+  [18:12:07] ckpt: ['best.pth', 'epoch_4.pth']

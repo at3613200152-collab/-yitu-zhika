@@ -1,0 +1,86 @@
+<!-- pages/nutritionist/nutritionist.wxml - 营养师页面 -->
+<view class="container">
+  <!-- 输入表单 -->
+  <view class="card" wx:if="{{!plan}}">
+    <view class="title">营养师</view>
+    <view class="subtitle">输入基本信息，生成 7 天饮食参考</view>
+
+    <view class="section-title">基本信息</view>
+    <view class="form-row">
+      <text class="form-label">身高(cm)</text>
+      <input class="form-input" type="digit" value="{{height}}" bindinput="onInput" data-key="height" placeholder="170" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">体重(kg)</text>
+      <input class="form-input" type="digit" value="{{weight}}" bindinput="onInput" data-key="weight" placeholder="65" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">年龄</text>
+      <input class="form-input" type="digit" value="{{age}}" bindinput="onInput" data-key="age" placeholder="30" />
+    </view>
+
+    <view class="form-row">
+      <text class="form-label">性别</text>
+      <view class="option-row">
+        <button class="opt {{gender === 'male' ? 'opt-active' : ''}}" bindtap="onGenderSelect" data-v="male">男</button>
+        <button class="opt {{gender === 'female' ? 'opt-active' : ''}}" bindtap="onGenderSelect" data-v="female">女</button>
+      </view>
+    </view>
+
+    <view class="form-row">
+      <text class="form-label">活动水平</text>
+      <picker mode="selector" range="{{activityLevels}}" value="{{activityIndex}}" bindchange="onActivityChange">
+        <view class="picker">{{activityLevels[activityIndex]}}</view>
+      </picker>
+    </view>
+
+    <view class="form-row">
+      <text class="form-label">目标</text>
+      <view class="option-row">
+        <button class="opt {{goal === 'lose' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="lose">减</button>
+        <button class="opt {{goal === 'maintain' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="maintain">维持</button>
+        <button class="opt {{goal === 'gain' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="gain">增</button>
+      </view>
+    </view>
+
+    <view class="section-title">忌口（可选）</view>
+    <view class="checkbox-row">
+      <view class="chip {{allergies.includes('鸡蛋') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="鸡蛋">鸡蛋</view>
+      <view class="chip {{allergies.includes('牛奶') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛奶">牛奶</view>
+      <view class="chip {{allergies.includes('海鲜') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="海鲜">海鲜</view>
+      <view class="chip {{allergies.includes('牛肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛肉">牛肉</view>
+      <view class="chip {{allergies.includes('猪肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="猪肉">猪肉</view>
+      <view class="chip {{allergies.includes('羊肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
+    </view>
+
+    <button class="btn-primary" bindtap="generatePlan" loading="{{loading}}" disabled="{{loading}}">
+      {{loading ? '生成中...' : '生成 7 天食谱'}}
+    </button>
+  </view>
+
+  <!-- 食谱结果 -->
+  <view class="card" wx:if="{{plan}}">
+    <view class="title">7 天饮食参考</view>
+    <view class="summary-row">
+      <view class="summary-item">
+        <text class="summary-num">{{plan.targets.kcal}}</text>
+        <text class="summary-label">目标 kcal/天</text>
+      </view>
+    </view>
+
+    <view class="day-block" wx:for="{{plan.daily_recipes}}" wx:for-item="day" wx:key="day">
+      <view class="day-title">第 {{day.day}} 天 ({{day.day_total_kcal}} kcal)</view>
+      <view class="meal-block" wx:for="{{day.meals}}" wx:for-item="meal" wx:key="meal_name">
+        <view class="meal-title">{{meal.meal_name === 'breakfast' ? '早餐' : meal.meal_name === 'lunch' ? '午餐' : '晚餐'}} ({{meal.nutrition.calories}} kcal)</view>
+        <view class="food-row" wx:for="{{meal.foods}}" wx:for-item="food" wx:key="name">
+          <text class="food-name">{{food.name}}</text>
+          <text class="food-grams">{{food.grams}}g</text>
+          <text class="food-kcal">{{food.nutrition.calories}} kcal</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="disclaimer">{{plan.disclaimer}}</view>
+    <button class="btn-secondary" bindtap="resetPlan">重新生成</button>
+  </view>
+</view>

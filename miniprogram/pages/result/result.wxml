@@ -1,0 +1,61 @@
+<view class="container" wx:if="{{record}}">
+  <!-- 预览图 -->
+  <view class="card">
+    <image src="{{record.imagePath}}" mode="aspectFit" class="result-image"></image>
+  </view>
+
+  <!-- 模型预测结果 -->
+  <view class="card" wx:if="{{!editing}}">
+    <view class="title">识别结果</view>
+    <view class="label">类别</view>
+    <view class="value">{{record.result.category_name || '未知'}}</view>
+
+    <view class="label">热量</view>
+    <view class="value">{{record.result.calories}} kcal</view>
+
+    <view class="label">重量（估算）</view>
+    <view class="value">{{record.result.weight}} g</view>
+
+    <view class="warning" wx:if="{{record.result.model_version}}">
+      数据来源：{{record.result.model_version}}（仅供参考，非医疗诊断）
+    </view>
+
+    <!-- 三档点击反馈（设计文档第 3 节） -->
+    <view class="section-title">这个估算准吗？</view>
+    <view class="grade-row">
+      <button class="grade-btn {{userGrade === 'over' ? 'grade-active-over' : ''}}" bindtap="onGradeSelect" data-grade="over">偏多</button>
+      <button class="grade-btn grade-default {{userGrade === 'ok' ? 'grade-active-ok' : ''}}" bindtap="onGradeSelect" data-grade="ok">差不多</button>
+      <button class="grade-btn {{userGrade === 'under' ? 'grade-active-under' : ''}}" bindtap="onGradeSelect" data-grade="under">偏少</button>
+    </view>
+    <view class="hint">点击"差不多"即可快速完成反馈</view>
+
+    <!-- 折叠的手动修正（漏斗 2%，默认隐藏） -->
+    <view class="manual-toggle" bindtap="toggleManualMode">
+      {{showManualForm ? '收起手动修正' : '我手动改…'}}
+    </view>
+
+    <view class="manual-form" wx:if="{{showManualForm}}">
+      <view class="label">类别</view>
+      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="input">{{editCategory || '请选择'}}</view>
+      </picker>
+
+      <view class="label">实际热量 (kcal)</view>
+      <input class="input" type="digit" value="{{editCalories}}" bindinput="onCaloriesInput" placeholder="如：250" />
+
+      <view class="label">实际重量 (g)</view>
+      <input class="input" type="digit" value="{{editWeight}}" bindinput="onWeightInput" placeholder="如：180" />
+
+      <button class="btn-primary" bindtap="submitManualFeedback">提交手动修正</button>
+    </view>
+
+    <!-- 跳过这顿（零成本退出） -->
+    <view class="skip-row">
+      <button class="btn-text" bindtap="skipFeedback">跳过这顿</button>
+    </view>
+  </view>
+
+  <view class="disclaimer">
+    本结果为算法估算，可能存在误差；请以实际食物称重和营养师建议为准。
+  </view>
+</view>

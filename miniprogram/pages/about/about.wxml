@@ -1,0 +1,34 @@
+<view class="container">
+  <view class="card">
+    <view class="title">一图知卡</view>
+    <view class="label">版本</view>
+    <view>0.1.0（开发版）</view>
+
+    <view class="label">功能</view>
+    <view>· 拍照识别食物类别</view>
+    <view>· 估算热量与重量</view>
+    <view>· 手动修正结果</view>
+    <view>· 查看历史记录</view>
+  </view>
+
+  <view class="card">
+    <view class="title">数据与隐私</view>
+    <view class="label">数据用途</view>
+    <view>· 上传的图片仅用于本工具的食物识别</view>
+    <view>· 识别结果和你的修正反馈将保存在本设备</view>
+    <view>· 我们不会将图片用于其他用途，也不会分享给第三方</view>
+
+    <view class="label">数据控制</view>
+    <view>· 你可以随时在「历史」页清空所有记录</view>
+    <view>· 卸载小程序将自动清除所有本地数据</view>
+
+    <button class="btn-primary" bindtap="clearData">清除我的所有数据</button>
+  </view>
+
+  <view class="card">
+    <view class="title">免责声明</view>
+    <view>本工具仅提供食物识别与热量参考，估算结果可能存在误差。</view>
+    <view>本工具不提供医疗诊断或营养处方。</view>
+    <view>具体饮食方案请咨询注册营养师或医生。</view>
+  </view>
+</view>
