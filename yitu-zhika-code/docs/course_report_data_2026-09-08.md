@@ -54,6 +54,12 @@
   `results/course_report_plots/calorie_scatter_rgb_official.png`（上线模型单图）、
   `results/course_report_plots/summary.txt`（由 audited test_predictions.csv 独立重算，
   MAE/R² 与 test_metrics.json 完全一致，可作交叉验证证据）；复现脚本 `results/plot_report_figures.py`
+- **消融与分类细节图（2026-09-08 生成，脚本 `results/plot_report_figures2.py`）**：
+  `paired_delta_histogram.png`——逐餐差 (RGB+NIR)−RGB，均值 **+0.221 kcal**，
+  逐餐 95% CI **[-2.136, +2.579] kcal 跨过 0**，与 audit 的 64 拍摄日分组 bootstrap
+  ([-3.091, +2.503]) 结论一致：**无显著增益**（报告请以 capture-day bootstrap 为准，
+  逐餐 CI 只作直观佐证）；`confusion_matrix_rgb.png` / `confusion_matrix_nir.png`
+  ——11 类混淆矩阵（对角准确率 72.78% / 73.18%，可观察"蔬菜"类聚集现象）
 - 现有汇总：`results/experiment_comparison_v1.{json,md}`、`results/paired_comparison_v1.json`
 - 复现命令：
   - 多任务评估：`python src/evaluation/eval_multitask_full.py`（混淆矩阵版）
