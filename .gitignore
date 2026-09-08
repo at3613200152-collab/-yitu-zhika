@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ===== 敏感文件（绝不入库）=====
 .env
 .env.local
@@ -8,7 +7,7 @@
 secrets.json
 credentials.json
 
-# ===== 模型权重（用 Git LFS 或 Releases 上传）=====
+# ===== 模型权重（用 Git LFS 或 GitHub Releases 上传）=====
 *.pth
 *.pt
 *.ckpt
@@ -18,33 +17,45 @@ checkpoints/
 weights/
 models/best*/
 
-# ===== 数据集（体积大）=====
+# ===== 数据集（体积大 / 许可限制，仅保留 .gitkeep）=====
 data/
 !data/.gitkeep
 yitu-zhika-code/data/
 !yitu-zhika-code/data/.gitkeep
+*.h5
+*.hdf5
 
-# ===== 日志 =====
+# ===== 运行时产物 =====
+*.sqlite3
+*.sqlite3-journal
 logs/
 *.log
 backend_stdout.log
 backend_stderr.log
-trae-agent-toolhost/
+runs/
+lightning_logs/
+output/
 
-# ===== 评估产物 =====
+# ===== 评估产物（含审计链，需时随 GitHub Release 发布）=====
 results/
 yitu-zhika-code/results/
 
 # ===== Python =====
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+*.egg
 *.egg-info/
 dist/
 build/
 .pytest_cache/
 .venv/
 venv/
+env/
+
+# ===== Jupyter =====
+.ipynb_checkpoints/
 
 # ===== IDE / 编辑器 =====
 .idea/
@@ -53,12 +64,15 @@ venv/
 *.swo
 *~
 
+# ===== 微信开发者工具（个人配置不入库）=====
+miniprogram/project.private.config.json
+
 # ===== 操作系统 =====
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# ===== 大型二进制 ======
+# ===== 大型归档 =====
 *.tar
 *.tar.gz
 *.zip
@@ -73,54 +87,6 @@ full_structure.txt
 # ===== TRAE / Claude 工具产物 =====
 .trae-html-share-packages/
 yitu-zhika-code-trea/
+trae-agent-toolhost/
 cloudflared.exe
 ngrok/
-=======
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-dist/
-build/
-*.egg
-
-# 虚拟环境
-venv/
-.venv/
-env/
-
-# 模型权重（太大不上传）
-*.pth
-*.ckpt
-*.pt
-weights/
-checkpoints/
-
-# 数据集（太大不上传）
-data/raw/
-data/processed/
-*.h5
-*.hdf5
-
-# Jupyter
-.ipynb_checkpoints/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-
-# 系统文件
-.DS_Store
-Thumbs.db
-
-# 训练日志
-runs/
-lightning_logs/
-
-# 输出
-output/
-*.log
->>>>>>> origin/main

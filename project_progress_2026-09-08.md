@@ -10,7 +10,7 @@
 
 | 模块 | 状态 | 说明 |
 |---|---|---|
-| 主多任务模型 `meal_rgb_official_v1` | ✅ 已完成 | MAE kcal=49.9，R²=0.867，可上线 |
+| 主多任务模型 `meal_rgb_official_v1` | ✅ 已完成 | audited 测试集 MAE kcal=56.55，R²=0.839，可上线（原 49.9/0.867 无出处，见 3.4） |
 | NIR 生成器 `hsi_unet_v2` | ✅ 已完成 | PSNR 21.5 dB，支持 RGB→NIR 映射 |
 | 食物前置过滤器 | ✅ 已上线 | ImageNet ResNet50，拦卡通/动漫/截图 |
 | 后端推理服务 | ✅ 已上线 | localhost:8000，Flask + 7 个 API 接口 |
@@ -130,6 +130,55 @@ src/
 | 营养师返回 dish_id 而非中文名 | 加 CATEGORY_DISH_NAMES + _gen_name | 09-08 |
 | 非食物图被识别为食物 | 加 ImageNet ResNet50 前置过滤 | 09-08 |
 
+### 3.3 复核测试（2026-09-08 晚间，agent 接手后重新验证）
+
+复测环境：miniconda env `yitu`（Python 3.11.16 / torch 2.7.1+cu128），
+`python app/inference_service.py --port 8000`（CPU，主模型 SHA256 校验通过）。
+实测记录文件：`yitu-zhika-code/results/api_smoke_recheck_result.json`（results/ 不入库）。
+
+| 测试项 | 结果 |
+|---|---|
+| GET /health | ✅ `pipeline_loaded:true` |
+| 无 API key 访问 /model-info | ✅ 401 `UNAUTHORIZED` |
+| 食物识别（5 类，1 位小数） | ✅ 5/5 ok：apple_pie 266.6 / bibimbap 351.4 / caesar_salad 468.7 / baby_back_ribs 561.7 / bread_pudding 636.2 kcal |
+| 非食物拦截（3 类） | ✅ 3/3 `not_food`（filter=imagenet_resnet50，food_score=0） |
+| /weekly-plan 三组档案 | ✅ 均 7 天、unknown=0：male-moderate-maintain tdee=2507.1；female-light-lose tdee=1390.4；male-very_active-gain tdee=3834.7；每日 day_total_kcal 与 target 偏差 < 1 kcal |
+| special_population=true | ✅ `status=refused` → 人工审核路由 |
+| 输入校验 | ✅ 缺参 400 MISSING_PARAM / 非图片 400 UNSUPPORTED_FORMAT / 无文件 400 NO_IMAGE |
+| /feedback | ✅ SQLite + JSONL 双写 |
+
+**结论**
+1. **TDEE 返回 null 问题复测未复现，风险 2 关闭**：当前 `/weekly-plan` 走模板版
+   `TemplatePlanner`（无 DS API），响应不含顶层 `tdee:null`，数值在 `tdee_report.tdee`
+   且全部正常；小程序端只读取 `plan.targets.kcal` 与 `plan.daily_recipes[*]`，不存在
+   渲染空值路径。此前观察到的 null 应来自 DS-API 旧版路径（`weekly_planner.py` 的
+   llm 分支），已随模板版替换消失。若需兼容旧调用方，可在响应顶层补
+   `"tdee": tdee_report["tdee"]` 别名（非必需）。
+2. 主模型分类头仍偏向"蔬菜"（apple_pie/bibimbap/caesar_salad 均为蔬菜、prob 1.0），
+   与风险 1 一致：不影响热量数值，建议上线后按反馈数据迭代。
+
+### 3.4 静态审查修复（2026-09-08 晚间，模拟器测试的可行部分）
+
+无法在本环境启动微信开发者工具，故对小程序做了全量静态契约审查（app.json 页面/4 tabBar、
+JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过），发现并修复以下确定性问题：
+
+| 问题 | 修复 | 文件 |
+|---|---|---|
+| `.gitignore` 带冲突标记（`<<<<<<< HEAD…>>>>>>> origin/main`，merge 时未解决即提交） | 重写为干净的 UTF-8 合并版，追加 sqlite3/project.private.config.json 等忽略项 | 根 `.gitignore` |
+| 手动改类别的下拉是英文 id 且只有 10 项，后端返回中文名 → 无法预选、缺 `soup_stew`、回传中英不一致 | 改为 11 类中文展示 + id 回传，按 `category_idx` 预选，`model_category`/`corrected_category` 统一为 id | `miniprogram/pages/result/result.js` |
+| "我的"页统计字段（feedbackQuality/corrected_calories/grade=skip）从未写入 → confirm/skip/manual 统计失真 | result.js 提交成功后结构化落盘；contribution 回退推导补齐 `ok→confirm_only` | result.js / `contribution.js` |
+| `pages/feedback` 死页面（注册但无入口，submit 仅弹 toast 不真正上报） | 删除页面文件并从 app.json 移除（现 7 页：4 tab + result/about/onboarding） | `app.json`、`pages/feedback/*` |
+| 进度文档主模型 "MAE 49.9 / R² 0.867" 全仓库无出处，与 audited（56.55 / 0.839）不符 | 勘误为 audited 数字，报告引用以 audited 为准 | `project_progress_2026-09-08.md` |
+
+**未修（需微信开发者工具或产品决策，已在 release_checklist 记录）：**
+- 历史记录存的是临时图路径，小程序重启后预览可能失效（需落盘到 `wxfile://usr` + 清理策略）
+- onboarding 问卷的过敏原（英文）未与营养师页忌口（中文）打通，仅存 profile 未被消费
+
+**新增资产：** `yitu-zhika-code/docs/course_report_data_2026-09-08.md`（报告数据包，
+含三模型 audited 指标与数字勘误）、`yitu-zhika-code/docs/release_checklist_2026-09-08.md`
+（推送/权重 Release/部署/发布检查单）、`yitu-zhika-code/results/weights_manifest.json`
+（6 个发布权重的 SHA256）。
+
 ---
 
 ## 四、下一步工作清单
@@ -224,7 +273,7 @@ src/
 
 1. **分类头偏向"蔬菜"**：降低置信度阈值后能看到不同类别，但高置信度时仍偏向"蔬菜"。不影响热量估算，但影响用户体验。**建议**：上线后收集反馈数据再迭代。
 
-2. **TDEE 字段返回 null**：`/weekly-plan` 响应里 `tdee=None`，但 `day_total_kcal` 计算正确。**建议**：上线前修复这个小 bug。
+2. **TDEE 字段返回 null**：~~`/weekly-plan` 响应里 `tdee=None`~~ **✅ 已关闭（2026-09-08 复测未复现）**：模板版响应 `tdee_report.tdee` 数值正确（见 3.3），小程序无空值渲染路径。
 
 3. **服务器+备案周期**：备案需要 1-2 周，是上线的关键路径。**建议**：立即开始办备案。
 

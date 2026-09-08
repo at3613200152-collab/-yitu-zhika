@@ -40,7 +40,12 @@ Page({
     const recentItems = []
 
     history.forEach(r => {
-      const quality = r.feedbackQuality || (r.corrected ? 'manual_typed' : (r.grade === 'skip' ? 'skipped' : (r.grade ? 'directional' : '')))
+      // 新版记录写 feedbackQuality；旧记录按字段回退推导
+      const quality = r.feedbackQuality ||
+        (r.corrected ? 'manual_typed'
+          : r.grade === 'skip' ? 'skipped'
+          : r.grade === 'ok' ? 'confirm_only'
+          : r.grade ? 'directional' : '')
       
       if (quality === 'confirm_only') confirmed++
       else if (quality === 'manual_typed') {

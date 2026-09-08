@@ -2,7 +2,6 @@
   "pages": [
     "pages/camera/camera",
     "pages/result/result",
-    "pages/feedback/feedback",
     "pages/history/history",
     "pages/contribution/contribution",
     "pages/onboarding/onboarding",
