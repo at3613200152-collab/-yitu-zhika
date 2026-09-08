@@ -49,6 +49,11 @@
 
 ## 五、图表材料（结果目录，供报告贴图）
 - 训练曲线/散点：`results/phase2_eval_corrected/{training_curves.png,scatter_plot.png}`（legacy 模型）
+- **三模型热量回归对比图（本文件对应数据，2026-09-08 生成）**：
+  `results/course_report_plots/calorie_scatter_3models.png`（RGB / RGB+NIR / CalorieCLIP 三面板）、
+  `results/course_report_plots/calorie_scatter_rgb_official.png`（上线模型单图）、
+  `results/course_report_plots/summary.txt`（由 audited test_predictions.csv 独立重算，
+  MAE/R² 与 test_metrics.json 完全一致，可作交叉验证证据）；复现脚本 `results/plot_report_figures.py`
 - 现有汇总：`results/experiment_comparison_v1.{json,md}`、`results/paired_comparison_v1.json`
 - 复现命令：
   - 多任务评估：`python src/evaluation/eval_multitask_full.py`（混淆矩阵版）
