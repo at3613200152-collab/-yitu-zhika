@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 虚拟环境
+venv/
+.venv/
+env/
+
+# 模型权重（太大不上传）
+*.pth
+*.ckpt
+*.pt
+weights/
+checkpoints*/
+
+# 数据集（太大不上传，整目录忽略）
+data/
+*.h5
+*.hdf5
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 训练日志
+runs/
+lightning_logs/
+
+# 输出
+output/
+*.log
