@@ -1,74 +1,107 @@
-/**app.wxss**/
+/**app.wxss - 一图知卡 全局视觉 */
+page {
+  background: #f6f7fb;
+  color: #1f2329;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
 .container {
-  padding: 20rpx;
+  padding: 28rpx 24rpx 48rpx;
   min-height: 100vh;
   box-sizing: border-box;
-  background-color: #f5f5f5;
+  background-color: #f6f7fb;
 }
 
-.btn-primary {
-  background-color: #4CAF50;
-  color: white;
-  border-radius: 8rpx;
-  padding: 20rpx;
-  font-size: 32rpx;
-  text-align: center;
-  margin: 20rpx 0;
-}
-
-.btn-primary[disabled] {
-  background-color: #ccc;
-  color: #999;
-}
-
+/* 卡片 */
 .card {
-  background: white;
-  border-radius: 12rpx;
-  padding: 24rpx;
-  margin: 16rpx 0;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin: 20rpx 0;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+  box-shadow: 0 8rpx 28rpx rgba(31, 64, 118, 0.06);
+  border: 1rpx solid rgba(31, 64, 118, 0.04);
+}
+
+/* 主按钮：渐变胶囊 */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 96rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #07c160, #35d97a);
+  color: #ffffff;
+  font-size: 32rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  box-shadow: 0 12rpx 24rpx rgba(7, 193, 96, 0.24);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 6rpx 14rpx rgba(7, 193, 96, 0.2);
+}
+.btn-primary[disabled] {
+  background: linear-gradient(135deg, #c8c9cc, #d6d7db);
+  box-shadow: none;
+  color: #ffffff;
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: 999rpx;
+  background: #f0f1f4;
+  color: #4b5563;
+  font-size: 28rpx;
+  margin-top: 16rpx;
 }
 
 .title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #1f2329;
   margin-bottom: 12rpx;
 }
 
 .value {
-  font-size: 32rpx;
-  color: #4CAF50;
+  font-size: 34rpx;
+  color: #07c160;
   font-weight: 600;
 }
 
 .label {
   font-size: 28rpx;
-  color: #666;
+  color: #86909c;
   margin-top: 8rpx;
 }
 
 .warning {
-  color: #ff6b35;
+  color: #ff9f0a;
   font-size: 26rpx;
-  margin-top: 8rpx;
+  margin-top: 16rpx;
 }
 
 .disclaimer {
   font-size: 24rpx;
-  color: #999;
+  color: #86909c;
   margin-top: 16rpx;
   text-align: center;
+  line-height: 1.6;
 }
 
 .input {
-  border: 2rpx solid #ddd;
-  border-radius: 8rpx;
-  padding: 16rpx;
+  border: 2rpx solid transparent;
+  background: #f5f6f8;
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
   font-size: 30rpx;
   width: 100%;
   box-sizing: border-box;
   margin: 12rpx 0;
 }
+.input:focus { border-color: #07c160; background: #ffffff; }

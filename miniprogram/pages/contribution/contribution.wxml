@@ -1,78 +1,74 @@
-<!-- pages/contribution/contribution.wxml - 我的贡献（设计文档第 4 节） -->
+<!-- pages/contribution/contribution.wxml - 我的贡献 / 成就 -->
 <view class="container">
-  <view class="card summary">
-    <view class="title">我的贡献</view>
-    <view class="stat-row">
-      <view class="stat">
-        <view class="stat-num">{{stats.total}}</view>
-        <view class="stat-label">上传餐数</view>
-      </view>
-      <view class="stat">
-        <view class="stat-num">{{stats.confirmed}}</view>
-        <view class="stat-label">已确认</view>
-      </view>
-      <view class="stat">
-        <view class="stat-num">{{stats.skipped}}</view>
-        <view class="stat-label">跳过率</view>
-      </view>
+
+  <!-- 打卡 hero -->
+  <view class="hero card">
+    <view class="hero-top">
+      <view class="streak-num">{{streak}}</view>
+      <view class="streak-unit">天连续记录</view>
     </view>
-    <view class="stat-row">
-      <view class="stat">
-        <view class="stat-num">{{stats.manual}}</view>
-        <view class="stat-label">手动修正</view>
-      </view>
-      <view class="stat">
-        <view class="stat-num">{{stats.skipPct}}%</view>
-        <view class="stat-label">跳过比例</view>
+    <view class="hero-emoji">🔥</view>
+    <view class="week-row">
+      <view class="dot {{index < daysInWeek ? 'dot-on' : ''}}" wx:for="{{weekDots}}" wx:key="index"></view>
+    </view>
+    <view class="week-text">本周已记录 {{daysInWeek}}/{{weekTotal}} 天 · 累计 {{totalDays}} 天</view>
+  </view>
+
+  <!-- 成就 -->
+  <view class="card">
+    <view class="card-head">
+      <text class="card-title">成就</text>
+      <text class="card-sub">{{achievementCount}}/{{milestones.length}} 已达成</text>
+    </view>
+    <view class="ach-grid">
+      <view class="ach {{m.achieved ? 'ach-on' : 'ach-off'}}" wx:for="{{milestones}}" wx:key="label">
+        <text class="ach-emoji">{{m.emoji}}</text>
+        <text class="ach-label">{{m.label}}</text>
       </view>
     </view>
   </view>
 
+  <!-- 贡献统计 -->
+  <view class="card">
+    <view class="card-head"><text class="card-title">我的贡献</text></view>
+    <view class="stat-row">
+      <view class="stat"><view class="stat-num">{{stats.total}}</view><view class="stat-label">上传餐数</view></view>
+      <view class="stat"><view class="stat-num">{{stats.confirmed}}</view><view class="stat-label">已确认</view></view>
+      <view class="stat"><view class="stat-num">{{stats.manual}}</view><view class="stat-label">手动修正</view></view>
+    </view>
+    <view class="stat-row">
+      <view class="stat"><view class="stat-num">{{stats.skipPct}}%</view><view class="stat-label">跳过比例</view></view>
+      <view class="stat"><view class="stat-num">{{stats.biasPct}}%</view><view class="stat-label">平均偏差</view></view>
+    </view>
+    <view class="hint-block">你的反馈让模型一点点变准，坚持记录就是贡献。</view>
+  </view>
+
+  <!-- 空状态 -->
   <view class="card" wx:if="{{stats.total === 0}}">
     <view class="empty">还没有贡献记录</view>
-    <view class="hint">拍一张食物照片，即可开始贡献</view>
+    <view class="hint">拍一张食物照片，即可开始你的饮食记录之旅</view>
     <button class="btn-primary" bindtap="goCamera">去拍照</button>
   </view>
 
+  <!-- 最近贡献 -->
   <view class="card" wx:if="{{stats.total > 0}}">
-    <view class="title">帮助模型变好了多少？</view>
-    <view class="hint-block">
-      你的反馈帮助模型逐步优化。下面是基于你已确认的样本估算的偏差情况。
-    </view>
-    <view class="row">
-      <text class="row-label">已确认样本数</text>
-      <text class="row-value">{{stats.confirmed}} 条</text>
-    </view>
-    <view class="row">
-      <text class="row-label">估算平均偏差</text>
-      <text class="row-value">{{stats.biasPct}}%</text>
-    </view>
-    <view class="row" wx:if="{{stats.improved}}">
-      <text class="row-label">比上批模型改善</text>
-      <text class="row-value highlight">↓ {{stats.improved}}%</text>
-    </view>
-  </view>
-
-  <view class="card" wx:if="{{stats.total > 0}}">
-    <view class="title">最近贡献</view>
+    <view class="card-head"><text class="card-title">最近贡献</text></view>
     <view class="row" wx:for="{{recentItems}}" wx:key="id">
       <text class="row-label">{{item.label}}</text>
       <text class="row-value {{item.quality === 'skipped' ? 'dim' : item.quality === 'manual_typed' ? 'highlight' : ''}}">{{item.qualityLabel}}</text>
     </view>
   </view>
 
-  <view class="disclaimer">
-    你的数据仅存储在本地，反馈数据匿名上传到服务器用于模型改进。可在下方一键清除。
-  </view>
-
-  <!-- 关于本应用（原 about 页内容合并到此） -->
+  <!-- 关于 -->
   <view class="card">
-    <view class="title">关于本应用</view>
+    <view class="card-head"><text class="card-title">关于本应用</text></view>
     <view class="row"><text class="row-label">版本</text><text class="row-value">1.0.0</text></view>
     <view class="row"><text class="row-label">数据用途</text><text class="row-value">仅用于食物识别研究</text></view>
-    <view class="hint-block">
-      本工具不提供医疗诊断或营养处方，预测结果可能存在误差，仅供参考。
-    </view>
+    <view class="hint-block">本工具不提供医疗诊断或营养处方，预测结果可能存在误差，仅供参考。</view>
     <button class="btn-secondary" bindtap="clearAllData" loading="{{clearing}}">清除所有本地数据</button>
+  </view>
+
+  <view class="disclaimer">
+    你的数据仅存储在本地，反馈数据匿名上传到服务器用于模型改进。
   </view>
 </view>

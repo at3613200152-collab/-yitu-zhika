@@ -1,38 +1,46 @@
 <view class="container" wx:if="{{record}}">
-  <!-- 预览图 -->
-  <view class="card">
+  <!-- 图 -->
+  <view class="card photo-card">
     <image src="{{record.imagePath}}" mode="aspectFit" class="result-image"></image>
   </view>
 
-  <!-- 模型预测结果 -->
+  <!-- 识别结果 -->
   <view class="card" wx:if="{{!editing}}">
-    <view class="title">识别结果</view>
-    <view class="label">类别</view>
-    <view class="value">{{record.result.category_name || '未知'}}</view>
+    <view class="card-head">
+      <text class="card-title">识别结果</text>
+    </view>
 
-    <!-- 多类别置信度提示（混合餐可能同时含多类） -->
-    <view class="label" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">食物种类（按置信度）</view>
-    <view class="cat-list" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">
-      <view class="cat-row" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx">
-        <text class="cat-name">{{c.name}}</text>
-        <text class="cat-pct">{{c.pct}}%</text>
+    <view class="hero">
+      <view class="hero-cal">{{record.result.calories}}</view>
+      <view class="hero-unit">kcal</view>
+    </view>
+    <view class="hero-sub">
+      <text class="cat-chip">{{record.result.category_name || '未知'}}</text>
+      <text class="weight">≈ {{record.result.weight}} g</text>
+    </view>
+
+    <!-- 多类别置信度 -->
+    <view class="probs" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">
+      <view class="prob" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx">
+        <text class="prob-name">{{c.name}}</text>
+        <view class="prob-track">
+          <view class="prob-fill" style="width: {{c.pct}}%;"></view>
+        </view>
+        <text class="prob-pct">{{c.pct}}%</text>
       </view>
+      <view class="prob-note">按置信度排序的粗类别；混合餐可能含多类，非逐项检测。</view>
     </view>
-    <view class="hint" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">
-      按模型置信度排序的粗类别；混合餐可能同时含多类，仅供参考，非逐项成分检测。
-    </view>
-
-    <view class="label">热量</view>
-    <view class="value">{{record.result.calories}} kcal</view>
-
-    <view class="label">重量（估算）</view>
-    <view class="value">{{record.result.weight}} g</view>
 
     <view class="warning" wx:if="{{record.result.model_version}}">
       数据来源：{{record.result.model_version}}（仅供参考，非医疗诊断）
     </view>
 
-    <!-- 三档点击反馈（设计文档第 3 节） -->
+    <!-- 完成记录的鼓舞反馈 -->
+    <view class="celebrate" wx:if="{{celebrated}}">
+      🎉 已记录到你的饮食日记，坚持就是胜利！
+    </view>
+
+    <!-- 三档反馈 -->
     <view class="section-title">这个估算准吗？</view>
     <view class="grade-row">
       <button class="grade-btn {{userGrade === 'over' ? 'grade-active-over' : ''}}" bindtap="onGradeSelect" data-grade="over">偏多</button>
@@ -41,27 +49,22 @@
     </view>
     <view class="hint">点击"差不多"即可快速完成反馈</view>
 
-    <!-- 折叠的手动修正（漏斗 2%，默认隐藏） -->
+    <!-- 折叠手动修正 -->
     <view class="manual-toggle" bindtap="toggleManualMode">
       {{showManualForm ? '收起手动修正' : '我手动改…'}}
     </view>
-
     <view class="manual-form" wx:if="{{showManualForm}}">
       <view class="label">类别</view>
       <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
         <view class="input">{{editCategory || '请选择'}}</view>
       </picker>
-
       <view class="label">实际热量 (kcal)</view>
       <input class="input" type="digit" value="{{editCalories}}" bindinput="onCaloriesInput" placeholder="如：250" />
-
       <view class="label">实际重量 (g)</view>
       <input class="input" type="digit" value="{{editWeight}}" bindinput="onWeightInput" placeholder="如：180" />
-
       <button class="btn-primary" bindtap="submitManualFeedback">提交手动修正</button>
     </view>
 
-    <!-- 跳过这顿（零成本退出） -->
     <view class="skip-row">
       <button class="btn-text" bindtap="skipFeedback">跳过这顿</button>
     </view>

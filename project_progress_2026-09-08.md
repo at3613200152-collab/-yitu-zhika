@@ -171,6 +171,7 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 | 进度文档主模型 "MAE 49.9 / R² 0.867" 全仓库无出处，与 audited（56.55 / 0.839）不符 | 勘误为 audited 数字，报告引用以 audited 为准 | `project_progress_2026-09-08.md` |
 | 结果页只显示单一粗类别（混合餐如饺子+肉+菜+蘸料被压成"蔬菜"） | `/predict` 增加 `category_probs`（top-5 置信度），结果页展示"食物种类（按置信度）"，并注明非逐项成分检测 | `experiment_pipeline.py`、`inference_service.py`、`result.wxml`/`.wxss` |
 | 历史记录存的是临时图路径，小程序重启后缩略图失效 | 拍摄后落盘到 `wx.env.USER_DATA_PATH`（保留最近 60 张自动清理，失败保底用临时路径） | `pages/camera/camera.js` |
+| 整体 UI 较单调、缺乏使用激励（用户反馈"丑"，想要完成感/满足感） | 全局视觉升级（现代配色/圆角卡片/渐变主按钮）+ 三处成就机制：①「我的」连续打卡🔥+周进度圆点+里程碑成就；②历史页打卡摘要；③结果页完成记录后🎉鼓舞反馈 | `app.wxss`、`contribution/*`、`result/*`、`history/*` |
 
 **未修（需微信开发者工具或产品决策，已在 release_checklist 记录）：**
 - onboarding 问卷的过敏原（英文）未与营养师页忌口（中文）打通，仅存 profile 未被消费

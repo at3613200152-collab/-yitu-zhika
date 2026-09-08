@@ -1,27 +1,43 @@
 <view class="container">
   <view class="title">历史记录</view>
 
-  <view wx:if="{{history.length === 0}}" class="empty">
-    <text>暂无记录</text>
+  <!-- 打卡摘要 -->
+  <view class="summary card" wx:if="{{total > 0}}">
+    <view class="summary-left">
+      <text class="sum-num">🔥 {{streak}}</text>
+      <text class="sum-label">天连续记录</text>
+    </view>
+    <view class="summary-right">
+      <view class="dots">
+        <view class="dot {{index < daysInWeek ? 'dot-on' : ''}}" wx:for="{{weekDots}}" wx:key="index"></view>
+      </view>
+      <view class="sum-label2">本周 {{daysInWeek}}/{{weekTotal}} 天 · 共 {{total}} 餐</view>
+    </view>
   </view>
 
-  <view wx:for="{{history}}" wx:key="id" class="card"
-        bindtap="viewDetail" data-id="{{item.id}}">
-    <view class="history-row">
-      <image src="{{item.imagePath}}" mode="aspectFill" class="history-thumb"></image>
-      <view class="history-info">
-        <view class="history-cat">{{item.result.category_name || '未知'}}</view>
-        <view class="history-kcal">{{item.result.calories}} kcal</view>
-        <view class="history-time">{{item.timestamp}}</view>
-        <view class="warning" wx:if="{{item.corrected}}">已修正</view>
-        <view class="warning" wx:if="{{item.savedLocal}}">仅本地保存</view>
+  <view wx:if="{{history.length === 0}}" class="empty card">
+    <text>暂无记录</text>
+    <view class="empty-hint">拍一张食物照片，开始你的饮食记录之旅</view>
+  </view>
+
+  <view wx:for="{{history}}" wx:key="id" class="record card" bindtap="viewDetail" data-id="{{item.id}}">
+    <image src="{{item.imagePath}}" mode="aspectFill" class="record-thumb"></image>
+    <view class="record-info">
+      <view class="record-cat">
+        <text class="cat-dot" style="background: {{item.result.category_name === '蔬菜' ? '#07c160' : item.result.category_name === '肉类' ? '#f56c6c' : item.result.category_name === '甜点' ? '#f7ba2a' : '#8a94a6'}};"></text>
+        <text class="record-name">{{item.result.category_name || '未知'}}</text>
+        <text class="record-grams">{{item.result.weight}} g</text>
+      </view>
+      <view class="record-kcal">{{item.result.calories}} kcal</view>
+      <view class="record-meta">
+        <text>{{item.timestamp}}</text>
+        <text class="flag" wx:if="{{item.corrected}}">已修正</text>
+        <text class="flag local" wx:if="{{item.savedLocal}}">仅本地</text>
       </view>
     </view>
   </view>
 
-  <button class="btn-primary" wx:if="{{history.length > 0}}" bindtap="clearHistory">
-    清空历史
-  </button>
+  <button class="btn-primary" wx:if="{{history.length > 0}}" bindtap="clearHistory">清空历史</button>
 
   <view class="disclaimer">
     历史记录仅保存在本地设备，删除后无法恢复。

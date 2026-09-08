@@ -1,28 +1,55 @@
-.container { padding: 24rpx; background: #f5f5f5; min-height: 100vh; }
-.card { background: #fff; border-radius: 16rpx; padding: 32rpx; margin-bottom: 24rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06); }
-.summary { text-align: center; padding: 48rpx 32rpx; }
-.title { font-size: 36rpx; font-weight: 600; color: #333; margin-bottom: 24rpx; }
-.stat-row { display: flex; justify-content: space-around; margin: 16rpx 0; }
-.stat { flex: 1; text-align: center; }
-.stat-num { font-size: 48rpx; font-weight: 600; color: #4CAF50; }
-.stat-label { font-size: 24rpx; color: #888; margin-top: 8rpx; }
+/* pages/contribution/contribution.wxss - 我的贡献 / 成就 */
+.container { padding: 28rpx 24rpx 48rpx; background: #f6f7fb; min-height: 100vh; }
+.card { background: #fff; border-radius: 24rpx; padding: 32rpx; margin-bottom: 24rpx; box-shadow: 0 8rpx 28rpx rgba(31,64,118,.06); }
 
-.empty { font-size: 32rpx; color: #999; margin-bottom: 16rpx; }
-.hint { font-size: 24rpx; color: #aaa; margin-bottom: 24rpx; }
-.hint-block { font-size: 24rpx; color: #888; margin-bottom: 24rpx; line-height: 1.6; }
-.row { display: flex; justify-content: space-between; padding: 16rpx 0; border-bottom: 1rpx solid #f0f0f0; }
+.card-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20rpx; }
+.card-title { font-size: 32rpx; font-weight: 700; color: #1f2329; }
+.card-sub { font-size: 24rpx; color: #07c160; }
+
+/* 打卡 hero */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, #07c160, #21d07a);
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+.hero-emoji { position: absolute; top: 24rpx; right: 32rpx; font-size: 88rpx; opacity: .35; }
+.hero-top { margin-top: 8rpx; }
+.streak-num { font-size: 120rpx; font-weight: 800; line-height: 1; }
+.streak-unit { font-size: 28rpx; opacity: .9; margin-top: 4rpx; }
+.week-row { display: flex; justify-content: center; gap: 12rpx; margin-top: 28rpx; }
+.dot { width: 20rpx; height: 20rpx; border-radius: 50%; background: rgba(255,255,255,.35); }
+.dot-on { background: #fff; box-shadow: 0 0 0 4rpx rgba(255,255,255,.28); }
+.week-text { font-size: 24rpx; margin-top: 16rpx; opacity: .95; }
+
+/* 成就 */
+.ach-grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.ach {
+  width: calc((100% - 32rpx) / 3);
+  box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; gap: 8rpx;
+  padding: 20rpx 8rpx; border-radius: 18rpx; font-size: 22rpx;
+}
+.ach-on { background: #e9f9f0; color: #07c160; border: 1rpx solid #b9efd1; }
+.ach-off { background: #f4f5f7; color: #a9adb3; }
+.ach-emoji { font-size: 44rpx; }
+.ach-label { text-align: center; line-height: 1.3; }
+
+/* 统计 */
+.stat-row { display: flex; justify-content: space-around; padding: 20rpx 0; border-bottom: 1rpx solid #f2f3f5; }
+.stat { text-align: center; }
+.stat-num { font-size: 44rpx; font-weight: 700; color: #07c160; }
+.stat-label { font-size: 24rpx; color: #86909c; margin-top: 4rpx; }
+.hint-block { font-size: 24rpx; color: #86909c; margin-top: 16rpx; line-height: 1.6; }
+.empty { font-size: 30rpx; color: #4b5563; text-align: center; margin-top: 16rpx; }
+.hint { font-size: 24rpx; color: #86909c; text-align: center; margin: 12rpx 0 24rpx; }
+
+.row { display: flex; justify-content: space-between; padding: 16rpx 0; border-bottom: 1rpx solid #f2f3f5; font-size: 28rpx; }
 .row:last-child { border-bottom: none; }
-.row-label { font-size: 28rpx; color: #666; }
-.row-value { font-size: 28rpx; color: #333; }
-.dim { color: #999; }
-.highlight { color: #2e7d32; font-weight: 500; }
+.row-label { color: #4b5563; }
+.row-value { color: #1f2329; }
+.row-value.dim { color: #a9adb3; }
+.row-value.highlight { color: #07c160; font-weight: 600; }
 
-.btn-primary {
-  background: #4CAF50; color: white; border-radius: 12rpx;
-  font-size: 30rpx; height: 88rpx; line-height: 88rpx; margin-top: 16rpx;
-}
-.btn-secondary {
-  background: #f0f0f0; color: #666; border-radius: 12rpx;
-  font-size: 28rpx; height: 80rpx; line-height: 80rpx; margin-top: 16rpx;
-}
-.disclaimer { font-size: 22rpx; color: #999; text-align: center; padding: 24rpx; line-height: 1.6; }
+.disclaimer { font-size: 22rpx; color: #86909c; text-align: center; padding: 16rpx 24rpx; line-height: 1.6; }

@@ -34,7 +34,9 @@ Page({
     categoryIndex: -1,
     editCalories: '',
     editWeight: '',
-    editCategory: ''
+    editCategory: '',
+    // 完成记录后的满足感反馈
+    celebrated: false
   },
 
   onLoad(options) {
@@ -121,7 +123,8 @@ Page({
         record.feedbackQuality = quality
         record.feedbackSubmitted = true
         app.saveHistory(record)
-        setTimeout(() => wx.navigateBack(), 800)
+        this.setData({ celebrated: true })
+        setTimeout(() => wx.navigateBack(), 900)
       } else {
         wx.showToast({ title: '反馈提交失败，不影响识别', icon: 'none' })
       }
@@ -191,8 +194,8 @@ Page({
         record.corrected_category = payload.corrected_category
         record.feedbackSubmitted = true
         app.saveHistory(record)
-        this.setData({ showManualForm: false, editing: false })
-        setTimeout(() => wx.navigateBack(), 800)
+        this.setData({ showManualForm: false, editing: false, celebrated: true })
+        setTimeout(() => wx.navigateBack(), 900)
       } else {
         wx.showModal({
           title: '提交失败',
