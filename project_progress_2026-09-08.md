@@ -213,6 +213,20 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 - 文档：`miniprogram/UI_REDESIGN_PLAN.md`（现状梳理 + 改动清单）。
 - **验收提示**：需在微信开发者工具/真机验收（用户完成拍照→修正→保存；区分估算/确认；食谱可调整；未知不被包装为准确；错误可恢复不丢内容）。
 
+### 3.7 内测数据采集与溯源（按《用户内测与训练数据采集方案》）
+
+- 新增 `app/collection.py`：records_v1 / consent_v1 / annotations_v1 三表，实现方案 §3/§4/§5/§6/§7。
+- 端点：`POST /record`（确认记录 + 训练授权 + 溯源 + 标签分层）、`POST /annotate`（自愿标注：菜名/食材/实测重量/烹饪方式/第二角度照片，审核状态 pending）、`POST /consent`（授权版本审计）。
+- 关键保证（均已实测）：
+  - 训练授权独立，默认不勾选；未同意记录 `training_consent=0`，不进训练池。
+  - 原始预测与标签分开保存；用户修正不覆盖原始预测。
+  - 标签分层 `label_source ∈ {model_only, user_estimate, measured, reference}`；未知字段一律 NULL（绝不填 0）。
+  - 图片私有存储到 `data/annotations/`（已 gitignore，非仓库内）；写盘前转 RGB 去 EXIF。
+  - 多角度关联字段 `capture_session_id`；数据版本字段 `dataset_split`（默认 'none'）。
+- 前端：结果页加"我同意将此记录用于改善识别（可选，默认勾选关）" + 自愿标注入口（可跳过、可留空）；「我的」页加全局训练授权开关（opt-in 弹窗说明 + 可随时关闭）。
+- 实测：/record(含授权 user_estimate, consent=1)、/record(未同意 model_only, consent=0)、/annotate(带图, review_status=pending, 图片落盘 27KB)、/consent 均返回 ok。
+- 待办（后续）：标注审核/管理端、删除申请与数据保留期说明、capture_session 多角度关联的引导交互、部署加固（gunicorn/nginx/HTTPS/私有存储访问控制）、训练管线（含防泄漏划分与独立评测）、以及微信平台隐私声明与发布审核。
+
 ---
 
 ## 四、下一步工作清单

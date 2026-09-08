@@ -32,6 +32,12 @@
       {{confirmed ? '已记录' : '确认记录'}}
     </button>
 
+    <!-- 训练授权（默认不勾选，独立于正常使用） -->
+    <view class="consent-row" bindtap="toggleConsent">
+      <view class="cb {{consent ? 'cb-on' : ''}}">{{consent ? '✓' : ''}}</view>
+      <text class="consent-text">我同意将此记录用于改善识别（可选，默认不勾选）</text>
+    </view>
+
     <!-- 次要操作：修改 / 重新选择 -->
     <view class="secondary-row">
       <text class="link" bindtap="toggleManual">{{showManual ? '收起修改' : '修改份量/类别'}}</text>
@@ -61,6 +67,20 @@
         <button class="grade-btn {{userGrade === 'under' ? 'grade-on' : ''}}" bindtap="onGradeSelect" data-grade="under">偏少</button>
       </view>
       <view class="grade-hint">点"差不多"即可快速完成，可随时修改。</view>
+    </view>
+
+    <!-- 自愿标注（独立、可跳过） -->
+    <view class="annotate">
+      <view class="annotate-entry" bindtap="toggleAnnotate">{{showAnnotate ? '收起' : '愿意帮助改善识别吗？（可选）'}}</view>
+      <view class="annotate-form" wx:if="{{showAnnotate}}">
+        <input class="input" placeholder="菜名（如：香菇滑鸡饭）" value="{{annName}}" bindinput="onAnnField" data-key="annName" />
+        <input class="input" placeholder="主要食材（可选，逗号分隔）" value="{{annIngredients}}" bindinput="onAnnField" data-key="annIngredients" />
+        <input class="input" type="digit" placeholder="称重重量(g，可选)" value="{{annWeight}}" bindinput="onAnnField" data-key="annWeight" />
+        <input class="input" placeholder="烹饪方式（可选，如：蒸/炒）" value="{{annCooking}}" bindinput="onAnnField" data-key="annCooking" />
+        <view class="ann-photo" bindtap="chooseAnnImage">{{annImage ? '已选择另一角度照片 ✓' : '补充另一角度照片（可选）'}}</view>
+        <button class="btn-secondary" bindtap="submitAnnotate">提交（不知道的可留空）</button>
+      </view>
+      <view class="ann-note">参与与否不影响正常使用；未同意训练的记录不会进入训练池。</view>
     </view>
   </view>
 

@@ -55,9 +55,10 @@
     <view class="card-head"><text class="card-title">数据管理</text></view>
     <view class="row" bindtap="goAbout"><text class="row-label">关于与隐私</text><text class="row-arrow">›</text></view>
     <view class="row" bindtap="setReminder"><text class="row-label">记录提醒</text><text class="row-value soon">即将上线</text></view>
+    <view class="row" bindtap="toggleTrainingConsent"><text class="row-label">用于改善识别（可选）</text><text class="row-value {{trainingConsent ? 'on' : 'soon'}}">{{trainingConsent ? '已同意' : '未同意'}}</text></view>
     <view class="row" bindtap="exportData"><text class="row-label">导出我的数据</text><text class="row-value soon">暂未开放</text></view>
     <button class="btn-danger" bindtap="clearAllData" loading="{{clearing}}">清除所有本地记录</button>
-    <view class="hint-block">清除后无法恢复；历史与问卷仅保存在本机。</view>
+    <view class="hint-block">清除后无法恢复；历史与问卷仅保存在本机。训练授权可随时关闭；删除原始数据与已训练模型的处理不同，正在开放删除申请入口。</view>
   </view>
 
   <view class="disclaimer">

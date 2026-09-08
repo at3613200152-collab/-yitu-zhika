@@ -49,4 +49,17 @@
 }
 @keyframes pop { 0% { transform: scale(.92); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
+/* 训练授权 */
+.consent-row { display: flex; align-items: center; gap: 16rpx; margin-top: 20rpx; padding: 12rpx 0; }
+.cb { width: 40rpx; height: 40rpx; border-radius: 10rpx; border: 2rpx solid #c9d2cc; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #fff; flex-shrink: 0; }
+.cb-on { background: #1f7a4d; border-color: #1f7a4d; }
+.consent-text { font-size: 24rpx; color: #6b7280; line-height: 1.5; }
+
+/* 自愿标注 */
+.annotate { margin-top: 24rpx; }
+.annotate-entry { font-size: 26rpx; color: #1f7a4d; text-align: center; padding: 16rpx; border-top: 1rpx dashed #e0e5e1; }
+.annotate-form { margin-top: 12rpx; }
+.ann-photo { font-size: 26rpx; color: #1f7a4d; text-align: center; padding: 16rpx; background: #f0f4f1; border-radius: 14rpx; margin: 12rpx 0; }
+.ann-note { font-size: 22rpx; color: #9aa0a6; text-align: center; margin-top: 12rpx; line-height: 1.5; }
+
 .disclaimer { font-size: 22rpx; color: #9aa0a6; text-align: center; padding: 12rpx 24rpx; line-height: 1.6; }

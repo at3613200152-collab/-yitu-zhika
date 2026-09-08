@@ -486,6 +486,86 @@ def feedback():
     })
 
 
+@app.route("/record", methods=["POST"])
+def record():
+    """保存一条内测记录（含训练授权 + 溯源 + 标签分层）。见方案 §3/§5/§6。"""
+    if not check_api_key():
+        return error_response("未授权：缺少或错误的 API key", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+    try:
+        from app import collection
+        record_id, label_source, consent = collection.save_record(data, request.remote_addr or "unknown")
+    except ValueError as e:
+        return error_response(str(e), 400, "INVALID_RECORD")
+    except Exception as e:
+        logger.error(f"record save failed: {e}", exc_info=True)
+        return error_response(f"记录保存失败：{e}", 500, "RECORD_SAVE_FAILED")
+    return jsonify({
+        "status": "ok", "record_id": record_id, "label_source": label_source,
+        "training_consent": consent, "review_status": "pending",
+    })
+
+
+@app.route("/annotate", methods=["POST"])
+def annotate():
+    """自愿标注（可跳过）：菜名/食材/实测重量/烹饪方式 + 可选第二角度照片。见方案 §3.2。"""
+    if not check_api_key():
+        return error_response("未授权：缺少或错误的 API key", 401, "UNAUTHORIZED")
+    fields = {}
+    image_bytes = None
+    if request.mimetype and request.mimetype.startswith("multipart/"):
+        for k in ("record_id", "capture_session_id", "dish_uuid", "label_name", "ingredients",
+                  "measured_weight", "weight_unit", "mass_basis", "tare_status", "cooking_method",
+                  "notes", "participant_id", "training_consent", "consent_version"):
+            if k in request.form:
+                fields[k] = request.form.get(k)
+        image_bytes = request.files["image"].read() if "image" in request.files else None
+    else:
+        try:
+            data = request.get_json(force=True, silent=True) or {}
+        except Exception:
+            return error_response("无效 JSON", 400, "INVALID_JSON")
+        fields = data
+    for k in ("measured_weight", "tare_status"):
+        if k in fields and fields[k] not in (None, ""):
+            try:
+                fields[k] = float(fields[k]) if k == "measured_weight" else int(float(fields[k]))
+            except (ValueError, TypeError):
+                fields[k] = None
+    try:
+        from app import collection
+        ann_id, status = collection.save_volunteer_annotation(fields, image_bytes, request.remote_addr or "unknown")
+    except Exception as e:
+        logger.error(f"annotate failed: {e}", exc_info=True)
+        return error_response(f"标注保存失败：{e}", 500, "ANNOTATE_FAILED")
+    return jsonify({"status": "ok", "annotation_id": ann_id, "review_status": status})
+
+
+@app.route("/consent", methods=["POST"])
+def consent():
+    """记录某参与者的训练授权版本（审计用）。"""
+    if not check_api_key():
+        return error_response("未授权：缺少或错误的 API key", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+    pid = data.get("participant_id")
+    ver = data.get("consent_version")
+    if not pid or not ver:
+        return error_response("缺少 participant_id 或 consent_version", 400, "MISSING_CONSENT")
+    try:
+        from app import collection
+        collection.ensure_consent_granted(pid, ver, source="explicit")
+    except Exception as e:
+        logger.error(f"consent save failed: {e}", exc_info=True)
+        return error_response(f"授权保存失败：{e}", 500, "CONSENT_FAILED")
+    return jsonify({"status": "ok", "message": "授权已记录", "participant_id": pid, "consent_version": ver})
+
+
 @app.route("/weekly-plan", methods=["POST"])
 def weekly_plan():
     """生成 7 天食谱（模板版，不依赖 DS API）。

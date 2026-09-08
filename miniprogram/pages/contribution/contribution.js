@@ -27,7 +27,45 @@ Page({
     weekDots: [1, 2, 3, 4, 5, 6, 7],
     milestones: [],
     achievementCount: 0,
-    profile: null
+    profile: null,
+    trainingConsent: false,
+    consentVersion: '2026-09-08-v1'
+  },
+
+  pid() {
+    let pid = wx.getStorageSync('participant_id')
+    if (!pid) { pid = 'u_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 1e6); wx.setStorageSync('participant_id', pid) }
+    return pid
+  },
+
+  toggleTrainingConsent() {
+    const next = !this.data.trainingConsent
+    if (next) {
+      wx.showModal({
+        title: '用于改善识别',
+        content: '同意后，你已确认并授权的记录（含照片）可用于改善识别模型。你可以随时在"我的"里关闭；关闭不影响正常使用，也不删除已产生的记录。是否同意？',
+        success: (r) => {
+          if (!r.confirm) return
+          wx.setStorageSync('training_consent', true)
+          this.setData({ trainingConsent: true })
+          this.saveConsent()
+        }
+      })
+    } else {
+      wx.setStorageSync('training_consent', false)
+      this.setData({ trainingConsent: false })
+      wx.showToast({ title: '已关闭训练授权', icon: 'none' })
+    }
+  },
+
+  saveConsent() {
+    wx.request({
+      url: app.globalData.apiBase + '/consent',
+      method: 'POST',
+      header: { 'X-API-Key': app.globalData.apiKey, 'Content-Type': 'application/json' },
+      data: { participant_id: this.pid(), consent_version: this.data.consentVersion },
+      fail: () => {}
+    })
   },
 
   onLoad() {
@@ -42,7 +80,8 @@ Page({
 
   loadProfile() {
     const profile = wx.getStorageSync('user_profile') || app.globalData.userProfile || null
-    this.setData({ profile: profile })
+    const trainingConsent = !!wx.getStorageSync('training_consent')
+    this.setData({ profile: profile, trainingConsent: trainingConsent })
   },
 
   goAbout() {

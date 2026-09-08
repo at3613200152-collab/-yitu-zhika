@@ -24,6 +24,7 @@
 .row-label { color: #4a4e52; }
 .row-value { color: #2a2e31; }
 .row-value.soon { color: #9aa0a6; font-size: 24rpx; }
+.row-value.on { color: #1f7a4d; }
 .row-arrow { color: #9aa0a6; font-size: 32rpx; }
 .btn-danger { display: flex; align-items: center; justify-content: center; height: 84rpx; border-radius: 999rpx; background: #fff; color: #c0392b; font-size: 28rpx; border: 1rpx solid #eab5ad; margin-top: 20rpx; }
 
