@@ -53,6 +53,33 @@
       <view class="chip {{allergies.includes('羊肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
     </view>
 
+    <view class="section-title">饮食范围（可选）</view>
+    <view class="form-row">
+      <text class="form-label">饮食范围</text>
+      <picker mode="selector" range="{{presets}}" value="{{presetIndex}}" bindchange="onPresetChange">
+        <view class="picker">{{presets[presetIndex]}}</view>
+      </picker>
+    </view>
+
+    <view class="section-title">自定义食物（补全数据）</view>
+    <view class="form-row food-add">
+      <input class="form-input" placeholder="名称" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />
+      <picker class="food-cat" mode="selector" range="{{foodCategoryIds}}" value="{{foodCategoryIndex}}" bindchange="onFoodCategory">
+        <view class="picker">{{foodCategoryIds[foodCategoryIndex]}}</view>
+      </picker>
+    </view>
+    <view class="form-row food-add">
+      <input class="form-input" type="digit" placeholder="每100g热量" value="{{foodKcal}}" bindinput="onFoodField" data-key="foodKcal" />
+      <input class="form-input" type="digit" placeholder="份量(g)" value="{{foodGrams}}" bindinput="onFoodField" data-key="foodGrams" />
+      <button class="add-btn" bindtap="addCustomFood">＋</button>
+    </view>
+    <view class="food-list" wx:if="{{customFoods.length > 0}}">
+      <view class="food-item" wx:for="{{customFoods}}" wx:key="index">
+        <text class="food-txt">{{item.name}}（{{item.kcal_per_100g}} kcal/100g，{{item.default_grams}}g）</text>
+        <text class="del" bindtap="removeCustomFood" data-idx="{{index}}">删除</text>
+      </view>
+    </view>
+
     <button class="btn-primary" bindtap="generatePlan" loading="{{loading}}" disabled="{{loading}}">
       {{loading ? '生成中...' : '生成 7 天食谱'}}
     </button>

@@ -180,6 +180,27 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 （推送/权重 Release/部署/发布检查单）、`yitu-zhika-code/results/weights_manifest.json`
 （6 个发布权重的 SHA256）。
 
+### 3.5 自定义/预设食物池（新功能，2026-09-08 晚）
+
+满足"预设食物 / 商家推广款 / 用户补全数据后科学配餐"：
+
+- **新端点** `POST /plan-from-menu`：在档案基础上接受 `preset`（内置 `dumpling` 饺子餐、
+  `merchant_demo` 商家推广）或 `foods`（用户/商家逐条补全：name/category/kcal_per_100g/
+  宏量/default_grams）。
+- **新模块** `recipe/custom_menu.py`：食物校验（沿用 kcal∈[0,2000]、宏量∈[0,100]、
+  11 类白名单）+ `plan_from_pool` 配餐（仅从该池选料，按 TDEE 目标热量分早/午/晚；
+  主食/高密度优先、蔬汤佐餐；忌口过滤；7 天食物顺序轮换不重复；输出宏量与免责声明；
+  不因缺类别强行归入其他类）。
+- **实测通过**：
+  - `preset=dumpling`（170/70/male/moderate/maintain）：7 天 `day_total` 2504–2506 vs 目标 2507，
+    全部 `within_tolerance`，含凉拌黄瓜佐餐。
+  - 用户补全（牛肉板面/卤蛋/烫青菜，女 160/55/28/light/lose，忌海鲜）：目标 1373，
+    7 天 1424–1427 均 `within_tolerance`；海鲜被忌口过滤。
+  - 非法食物 → 400 `INVALID_FOOD`（带具体原因）；空池 → 400 `EMPTY_FOOD_POOL`。
+- **前端** nutritionist 页：新增「饮食范围」预设选择 + 「自定义食物」录入
+  （名称/类别/每100g热量/份量，可增删）；选预设或录入食物时自动改走 `/plan-from-menu`。
+- 说明：预设及用户补全为演示估算值；商家接入应以真实检测/标签数据为准；上线前需强 API key。
+
 ---
 
 ## 四、下一步工作清单

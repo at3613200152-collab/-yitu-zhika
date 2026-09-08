@@ -560,6 +560,104 @@ def weekly_plan():
         return error_response(f"食谱生成失败：{e}", 500, "WEEKLY_PLAN_FAILED")
 
 
+@app.route("/plan-from-menu", methods=["POST"])
+def plan_from_menu():
+    """从自定义/预设食物池生成饮食参考（用户或商家补全食物营养数据后调用）。
+
+    请求 JSON body（在 /weekly-plan 档案字段基础上，二选一或都提供）：
+      {
+        ...profile 字段（height_cm/weight_kg/age/gender/activity_level/goal/allergies...）,
+        "preset": "dumpling" | "merchant_demo",          # 可选：内置预设菜单
+        "foods": [                                        # 可选：用户/商家补全的食物
+          {"name":"猪肉白菜水饺","category":"grain","kcal_per_100g":222,
+           "protein_per_100g":9.5,"carb_per_100g":28,"fat_per_100g":9,"default_grams":150},
+          ...
+        ]
+      }
+    """
+    if not check_api_key():
+        return error_response("未授权：缺少或错误的 API key", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+
+    required = ["height_cm", "weight_kg", "age", "gender"]
+    for k in required:
+        if k not in data:
+            return error_response(f"缺少参数：{k}", 400, "MISSING_PARAM")
+
+    try:
+        sys.path.insert(0, str(ROOT))
+        from recipe.tdee_estimator import UserProfile, Gender, ActivityLevel, Goal
+        from recipe.custom_menu import (
+            validate_food, foods_from_preset, plan_from_pool,
+        )
+    except ImportError as e:
+        return error_response(f"营养师模块加载失败：{e}", 500, "RECIPE_IMPORT_FAILED")
+
+    gender_map = {"male": Gender.MALE, "female": Gender.FEMALE}
+    activity_map = {
+        "sedentary": ActivityLevel.SEDENTARY, "light": ActivityLevel.LIGHT,
+        "moderate": ActivityLevel.MODERATE, "active": ActivityLevel.ACTIVE,
+        "very_active": ActivityLevel.VERY_ACTIVE,
+    }
+    goal_map = {"lose": Goal.LOSE, "maintain": Goal.MAINTAIN, "gain": Goal.GAIN}
+
+    gender = gender_map.get(str(data["gender"]).lower())
+    if not gender:
+        return error_response("gender 必须是 male 或 female", 400, "INVALID_GENDER")
+    activity = activity_map.get(str(data.get("activity_level", "moderate")).lower(), ActivityLevel.MODERATE)
+    goal = goal_map.get(str(data.get("goal", "maintain")).lower(), Goal.MAINTAIN)
+
+    profile = UserProfile(
+        height_cm=float(data["height_cm"]),
+        weight_kg=float(data["weight_kg"]),
+        age=int(data["age"]),
+        gender=gender,
+        activity_level=activity,
+        goal=goal,
+        allergies=data.get("allergies", []),
+        preferences=data.get("preferences", []),
+        special_population=bool(data.get("special_population", False)),
+    )
+
+    # 组装食物池：预设 + 用户补全
+    foods = []
+    preset_name = str(data.get("preset", "")).strip()
+    if preset_name:
+        preset_foods, pname, pdesc = foods_from_preset(preset_name)
+        if not preset_foods:
+            return error_response(f"未知预设菜单：{preset_name}", 400, "UNKNOWN_PRESET")
+        foods.extend(preset_foods)
+
+    user_foods_raw = data.get("foods", [])
+    if isinstance(user_foods_raw, dict):
+        user_foods_raw = [user_foods_raw]
+    if user_foods_raw:
+        for idx, raw in enumerate(user_foods_raw):
+            if not isinstance(raw, dict):
+                return error_response(f"foods[{idx}] 必须是对象", 400, "INVALID_FOOD")
+            item, err = validate_food(raw)
+            if err:
+                return error_response(f"foods[{idx}] {err}", 400, "INVALID_FOOD")
+            foods.append(item)
+
+    if not foods:
+        return error_response("请提供 preset 或 foods 至少其一", 400, "EMPTY_FOOD_POOL")
+
+    try:
+        result = plan_from_pool(profile, foods)
+        logger.info(
+            f"plan-from-menu generated: status={result['status']}, "
+            f"days={len(result.get('daily_recipes', []))}, pool={result.get('food_pool_count')}"
+        )
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"plan-from-menu failed: {e}", exc_info=True)
+        return error_response(f"饮食安排生成失败：{e}", 500, "PLAN_FAILED")
+
+
 def main():
     parser = argparse.ArgumentParser(description="yitu-zhika inference service")
     parser.add_argument("--port", type=int, default=8000)
