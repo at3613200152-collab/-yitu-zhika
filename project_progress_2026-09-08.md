@@ -169,6 +169,7 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 | "我的"页统计字段（feedbackQuality/corrected_calories/grade=skip）从未写入 → confirm/skip/manual 统计失真 | result.js 提交成功后结构化落盘；contribution 回退推导补齐 `ok→confirm_only` | result.js / `contribution.js` |
 | `pages/feedback` 死页面（注册但无入口，submit 仅弹 toast 不真正上报） | 删除页面文件并从 app.json 移除（现 7 页：4 tab + result/about/onboarding） | `app.json`、`pages/feedback/*` |
 | 进度文档主模型 "MAE 49.9 / R² 0.867" 全仓库无出处，与 audited（56.55 / 0.839）不符 | 勘误为 audited 数字，报告引用以 audited 为准 | `project_progress_2026-09-08.md` |
+| 结果页只显示单一粗类别（混合餐如饺子+肉+菜+蘸料被压成"蔬菜"） | `/predict` 增加 `category_probs`（top-5 置信度），结果页展示"食物种类（按置信度）"，并注明非逐项成分检测 | `experiment_pipeline.py`、`inference_service.py`、`result.wxml`/`.wxss` |
 
 **未修（需微信开发者工具或产品决策，已在 release_checklist 记录）：**
 - 历史记录存的是临时图路径，小程序重启后预览可能失效（需落盘到 `wxfile://usr` + 清理策略）

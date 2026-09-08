@@ -100,11 +100,25 @@ class ExperimentPipeline:
                 raise FloatingPointError('Non-finite model output')
             probabilities = logits.float().softmax(1)[0]
             index = int(probabilities.argmax())
+            # 多类别置信度分布（按置信度降序，截断到 5），供前端"食物种类"提示
+            sorted_idx = torch.argsort(probabilities, descending=True)[:5].tolist()
+            category_probs = [
+                {
+                    'idx': i,
+                    'id': self.categories[i],
+                    'name': CATEGORY_ZH[self.categories[i]],
+                    'prob': round(float(probabilities[i]), 3),
+                    'pct': round(float(probabilities[i]) * 100, 1),
+                }
+                for i in sorted_idx
+            ]
             result = {'calories': float(nir_values[0, 0]), 'weight': float(nir_values[0, 1]),
                 'rgb_calories': float(rgb_values[0, 0]), 'rgb_weight': float(rgb_values[0, 1]),
                 'nir_image': np.rint(nir_image.cpu().numpy().clip(0, 1)*255).astype(np.uint8),
                 'category_idx': index, 'category_name': CATEGORY_ZH[self.categories[index]],
-                'category_prob': float(probabilities[index]), 'classification_valid': True,
+                'category_prob': float(probabilities[index]),
+                'category_probs': category_probs,
+                'classification_valid': True,
                 'external_calories': None, 'external_status': external_status,
                 'inference_precision': 'FP32', 'device': str(self.device)}
             if self.external is not None:

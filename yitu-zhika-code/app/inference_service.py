@@ -306,6 +306,8 @@ def predict():
                 if k != "nir_image" and isinstance(v, (int, float, str, bool, type(None)))}
         safe["category_idx"] = result.get("category_idx")
         safe["category_prob"] = result.get("category_prob")
+        # 多类别置信度分布（前端"食物种类"提示）
+        safe["category_probs"] = result.get("category_probs", [])
         safe["status"] = "ok"
         safe["model_version"] = ONLINE_MODEL_VERSION
         safe["model_sha256_prefix"] = ONLINE_MODEL_SHA256[:16]

@@ -10,6 +10,18 @@
     <view class="label">类别</view>
     <view class="value">{{record.result.category_name || '未知'}}</view>
 
+    <!-- 多类别置信度提示（混合餐可能同时含多类） -->
+    <view class="label" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">食物种类（按置信度）</view>
+    <view class="cat-list" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">
+      <view class="cat-row" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx">
+        <text class="cat-name">{{c.name}}</text>
+        <text class="cat-pct">{{c.pct}}%</text>
+      </view>
+    </view>
+    <view class="hint" wx:if="{{record.result.category_probs && record.result.category_probs.length > 0}}">
+      按模型置信度排序的粗类别；混合餐可能同时含多类，仅供参考，非逐项成分检测。
+    </view>
+
     <view class="label">热量</view>
     <view class="value">{{record.result.calories}} kcal</view>
 
