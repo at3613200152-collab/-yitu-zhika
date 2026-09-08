@@ -170,9 +170,9 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 | `pages/feedback` 死页面（注册但无入口，submit 仅弹 toast 不真正上报） | 删除页面文件并从 app.json 移除（现 7 页：4 tab + result/about/onboarding） | `app.json`、`pages/feedback/*` |
 | 进度文档主模型 "MAE 49.9 / R² 0.867" 全仓库无出处，与 audited（56.55 / 0.839）不符 | 勘误为 audited 数字，报告引用以 audited 为准 | `project_progress_2026-09-08.md` |
 | 结果页只显示单一粗类别（混合餐如饺子+肉+菜+蘸料被压成"蔬菜"） | `/predict` 增加 `category_probs`（top-5 置信度），结果页展示"食物种类（按置信度）"，并注明非逐项成分检测 | `experiment_pipeline.py`、`inference_service.py`、`result.wxml`/`.wxss` |
+| 历史记录存的是临时图路径，小程序重启后缩略图失效 | 拍摄后落盘到 `wx.env.USER_DATA_PATH`（保留最近 60 张自动清理，失败保底用临时路径） | `pages/camera/camera.js` |
 
 **未修（需微信开发者工具或产品决策，已在 release_checklist 记录）：**
-- 历史记录存的是临时图路径，小程序重启后预览可能失效（需落盘到 `wxfile://usr` + 清理策略）
 - onboarding 问卷的过敏原（英文）未与营养师页忌口（中文）打通，仅存 profile 未被消费
 
 **新增资产：** `yitu-zhika-code/docs/course_report_data_2026-09-08.md`（报告数据包，
@@ -208,7 +208,7 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 
 | 序号 | 任务 | 优先级 | 说明 |
 |---|---|---|---|
-| 11 | 重训模型（更多数据） | 🟢 低 | 当前 MAE 49.9 kcal 已可用 |
+| 11 | 重训模型（更多数据） | 🟢 低 | 当前 MAE 56.55 kcal（audited）已可用 |
 | 12 | CalorieCLIP 基线对比 | 🟢 低 | 用于课程设计报告 |
 | 13 | 加固图像质量检测 | 🟢 低 | 拉普拉斯方差检测模糊图 |
 | 14 | 加人脸检测前置 | 🟢 低 | 防止上传人脸照片 |

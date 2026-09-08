@@ -69,6 +69,43 @@ Page({
     }
   },
 
+  // 把临时图片落到用户数据目录，重启后历史记录缩略图仍可见（否则 temp 路径失效）
+  // 失败时保底用临时路径，不影响本轮流程
+  savePermanent(filePath) {
+    return new Promise((resolve) => {
+      const fs = wx.getFileSystemManager()
+      const dest = `${wx.env.USER_DATA_PATH}/dish_${Date.now()}_${Math.floor(Math.random() * 1e6)}.jpg`
+      const fallback = () => resolve(filePath)
+      try {
+        fs.saveFile({
+          tempFilePath: filePath,
+          filePath: dest,
+          success: () => {
+            this.pruneSavedFiles()
+            resolve(dest)
+          },
+          fail: fallback
+        })
+      } catch (e) {
+        fallback()
+      }
+    })
+  },
+
+  // 保留最近 60 张已落盘图片，超出则删除最旧的（避免占满用户数据目录）
+  pruneSavedFiles() {
+    try {
+      const fs = wx.getFileSystemManager()
+      const dir = wx.env.USER_DATA_PATH
+      const list = fs.readdirSync(dir).filter(n => n.indexOf('dish_') === 0)
+      if (list.length <= 60) return
+      list.sort()  // dish_<timestamp>_<rand>.jpg 按文件名时间序
+      list.slice(0, list.length - 60).forEach(n => {
+        try { fs.unlinkSync(dir + '/' + n) } catch (e) { /* ignore */ }
+      })
+    } catch (e) { /* ignore */ }
+  },
+
   // 提交识别
   async submit() {
     if (!this.data.imagePath) {
@@ -83,7 +120,13 @@ Page({
       const dishUuid = this.generateDishUuid()
       const imageHash = await this.computeImageHash(this.data.imagePath)
 
-      const result = await this.callPredict(this.data.imagePath)
+      // 落盘到用户数据目录（重启后历史仍可预览）；失败则用临时路径
+      const savedPath = await this.savePermanent(this.data.imagePath)
+      if (savedPath !== this.data.imagePath) {
+        this.setData({ imagePath: savedPath })
+      }
+
+      const result = await this.callPredict(savedPath)
       
       // 保存到历史（带 dish_uuid 和 image_hash）
       const record = {
@@ -91,7 +134,7 @@ Page({
         dish_uuid: dishUuid,
         image_hash: imageHash,
         timestamp: new Date().toISOString(),
-        imagePath: this.data.imagePath,
+        imagePath: savedPath,
         result: result
       }
       app.saveHistory(record)
