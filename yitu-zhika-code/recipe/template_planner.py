@@ -218,6 +218,10 @@ class TemplatePlanner:
             "audit_trail": [],
             "targets": {"kcal": int(target), "macros_g": macros},
             "tdee_report": tdee_report,
+            # 顶层别名：供任何直接读 tdee 的调用方使用（旧接口曾期望顶层非空）
+            "tdee": tdee_report["tdee"],
+            "bmr": tdee_report["bmr"],
+            "target_calories": tdee_report["target_calories"],
             "disclaimer": "本建议为饮食参考，非医疗处方；具体方案请咨询营养师",
             "unknown_count": len(unknown_foods),
             "generator": "template_v1",

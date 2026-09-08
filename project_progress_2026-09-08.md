@@ -152,8 +152,8 @@ src/
    `TemplatePlanner`（无 DS API），响应不含顶层 `tdee:null`，数值在 `tdee_report.tdee`
    且全部正常；小程序端只读取 `plan.targets.kcal` 与 `plan.daily_recipes[*]`，不存在
    渲染空值路径。此前观察到的 null 应来自 DS-API 旧版路径（`weekly_planner.py` 的
-   llm 分支），已随模板版替换消失。若需兼容旧调用方，可在响应顶层补
-   `"tdee": tdee_report["tdee"]` 别名（非必需）。
+   llm 分支），已随模板版替换消失。**已顺手在响应顶层补 `tdee`/`bmr`/`target_calories`
+   别名**（2026-09-08 晚间实测顶层 `tdee=2507.1` 非空，与 `tdee_report` 一致）。
 2. 主模型分类头仍偏向"蔬菜"（apple_pie/bibimbap/caesar_salad 均为蔬菜、prob 1.0），
    与风险 1 一致：不影响热量数值，建议上线后按反馈数据迭代。
 
