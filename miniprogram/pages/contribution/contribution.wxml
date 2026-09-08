@@ -1,25 +1,36 @@
-<!-- pages/contribution/contribution.wxml - 我的贡献 / 成就 -->
 <view class="container">
+  <view class="page-title">我的</view>
 
-  <!-- 打卡 hero -->
+  <!-- 记录足迹（温和激励，非打卡惩罚） -->
   <view class="hero card">
-    <view class="hero-top">
+    <view class="hero-left">
       <view class="streak-num">{{streak}}</view>
       <view class="streak-unit">天连续记录</view>
     </view>
-    <view class="hero-emoji">🔥</view>
-    <view class="week-row">
-      <view class="dot {{index < daysInWeek ? 'dot-on' : ''}}" wx:for="{{weekDots}}" wx:key="index"></view>
+    <view class="hero-right">
+      <view class="dots">
+        <view class="dot {{index < daysInWeek ? 'dot-on' : ''}}" wx:for="{{weekDots}}" wx:key="index"></view>
+      </view>
+      <view class="hero-note">已记录 {{totalDays}} 天 · 本周 {{daysInWeek}}/{{weekTotal}} 天</view>
     </view>
-    <view class="week-text">本周已记录 {{daysInWeek}}/{{weekTotal}} 天 · 累计 {{totalDays}} 天</view>
   </view>
 
-  <!-- 成就 -->
+  <!-- 我的档案（可跳过） -->
   <view class="card">
-    <view class="card-head">
-      <text class="card-title">成就</text>
-      <text class="card-sub">{{achievementCount}}/{{milestones.length}} 已达成</text>
-    </view>
+    <view class="card-head"><text class="card-title">我的档案</text></view>
+    <block wx:if="{{profile}}">
+      <view class="row"><text class="row-label">饮食目标</text><text class="row-value">{{profile.goal === 'lose' || profile.goal === 'reduce' ? '控制/减' : profile.goal === 'gain' ? '增重' : '维持'}}</text></view>
+      <view class="row"><text class="row-label">忌口</text><text class="row-value">{{profile.allergens && profile.allergens.length ? '已设置 ' + profile.allergens.length + ' 项' : '未设置'}}</text></view>
+      <view class="row"><text class="row-label">偏好</text><text class="row-value">{{profile.advice === 'yes' ? '需要饮食建议' : '暂不需要'}}</text></view>
+    </block>
+    <block wx:else>
+      <view class="row"><text class="row-value">未填写，可跳过</text></view>
+    </block>
+  </view>
+
+  <!-- 成就（记录路上的小鼓励） -->
+  <view class="card">
+    <view class="card-head"><text class="card-title">记录足迹</text><text class="card-sub">{{achievementCount}}/{{milestones.length}} 达成</text></view>
     <view class="ach-grid">
       <view class="ach {{m.achieved ? 'ach-on' : 'ach-off'}}" wx:for="{{milestones}}" wx:key="label">
         <text class="ach-emoji">{{m.emoji}}</text>
@@ -28,47 +39,28 @@
     </view>
   </view>
 
-  <!-- 贡献统计 -->
+  <!-- 我的反馈（强调"让估算贴近你常吃的食物"，不评比吃得少） -->
   <view class="card">
-    <view class="card-head"><text class="card-title">我的贡献</text></view>
+    <view class="card-head"><text class="card-title">我的反馈</text></view>
     <view class="stat-row">
-      <view class="stat"><view class="stat-num">{{stats.total}}</view><view class="stat-label">上传餐数</view></view>
+      <view class="stat"><view class="stat-num">{{stats.total}}</view><view class="stat-label">记录餐数</view></view>
       <view class="stat"><view class="stat-num">{{stats.confirmed}}</view><view class="stat-label">已确认</view></view>
       <view class="stat"><view class="stat-num">{{stats.manual}}</view><view class="stat-label">手动修正</view></view>
     </view>
-    <view class="stat-row">
-      <view class="stat"><view class="stat-num">{{stats.skipPct}}%</view><view class="stat-label">跳过比例</view></view>
-      <view class="stat"><view class="stat-num">{{stats.biasPct}}%</view><view class="stat-label">平均偏差</view></view>
-    </view>
-    <view class="hint-block">你的反馈让模型一点点变准，坚持记录就是贡献。</view>
+    <view class="hint-block">你确认或修正得越多，估算越贴近你常吃的食物。</view>
   </view>
 
-  <!-- 空状态 -->
-  <view class="card" wx:if="{{stats.total === 0}}">
-    <view class="empty">还没有贡献记录</view>
-    <view class="hint">拍一张食物照片，即可开始你的饮食记录之旅</view>
-    <button class="btn-primary" bindtap="goCamera">去拍照</button>
-  </view>
-
-  <!-- 最近贡献 -->
-  <view class="card" wx:if="{{stats.total > 0}}">
-    <view class="card-head"><text class="card-title">最近贡献</text></view>
-    <view class="row" wx:for="{{recentItems}}" wx:key="id">
-      <text class="row-label">{{item.label}}</text>
-      <text class="row-value {{item.quality === 'skipped' ? 'dim' : item.quality === 'manual_typed' ? 'highlight' : ''}}">{{item.qualityLabel}}</text>
-    </view>
-  </view>
-
-  <!-- 关于 -->
+  <!-- 数据管理 -->
   <view class="card">
-    <view class="card-head"><text class="card-title">关于本应用</text></view>
-    <view class="row"><text class="row-label">版本</text><text class="row-value">1.0.0</text></view>
-    <view class="row"><text class="row-label">数据用途</text><text class="row-value">仅用于食物识别研究</text></view>
-    <view class="hint-block">本工具不提供医疗诊断或营养处方，预测结果可能存在误差，仅供参考。</view>
-    <button class="btn-secondary" bindtap="clearAllData" loading="{{clearing}}">清除所有本地数据</button>
+    <view class="card-head"><text class="card-title">数据管理</text></view>
+    <view class="row" bindtap="goAbout"><text class="row-label">关于与隐私</text><text class="row-arrow">›</text></view>
+    <view class="row" bindtap="setReminder"><text class="row-label">记录提醒</text><text class="row-value soon">即将上线</text></view>
+    <view class="row" bindtap="exportData"><text class="row-label">导出我的数据</text><text class="row-value soon">暂未开放</text></view>
+    <button class="btn-danger" bindtap="clearAllData" loading="{{clearing}}">清除所有本地记录</button>
+    <view class="hint-block">清除后无法恢复；历史与问卷仅保存在本机。</view>
   </view>
 
   <view class="disclaimer">
-    你的数据仅存储在本地，反馈数据匿名上传到服务器用于模型改进。
+    你的健康信息仅用于生成饮食参考；本店不会上传或分享给第三方。估算结果非医疗诊断。
   </view>
 </view>

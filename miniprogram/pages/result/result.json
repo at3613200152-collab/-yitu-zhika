@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "识别结果"
+  "navigationBarTitleText": "识别与确认",
+  "navigationBarBackgroundColor": "#faf7f4",
+  "navigationBarTextStyle": "black"
 }

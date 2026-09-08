@@ -1,4 +1,6 @@
 {
-  "navigationBarTitleText": "营养师",
+  "navigationBarTitleText": "饮食计划",
+  "navigationBarBackgroundColor": "#faf7f4",
+  "navigationBarTextStyle": "black",
   "usingComponents": {}
 }

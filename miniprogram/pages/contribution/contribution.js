@@ -26,15 +26,35 @@ Page({
     weekTotal: 7,
     weekDots: [1, 2, 3, 4, 5, 6, 7],
     milestones: [],
-    achievementCount: 0
+    achievementCount: 0,
+    profile: null
   },
 
   onLoad() {
     this.computeStats()
+    this.loadProfile()
   },
 
   onShow() {
     this.computeStats()
+    this.loadProfile()
+  },
+
+  loadProfile() {
+    const profile = wx.getStorageSync('user_profile') || app.globalData.userProfile || null
+    this.setData({ profile: profile })
+  },
+
+  goAbout() {
+    wx.navigateTo({ url: '/pages/about/about' })
+  },
+
+  // 尚未实现：仅提示，不做假按钮
+  exportData() {
+    wx.showToast({ title: '数据导出暂未开放', icon: 'none' })
+  },
+  setReminder() {
+    wx.showToast({ title: '提醒功能即将上线', icon: 'none' })
   },
 
   computeStats() {
@@ -156,7 +176,7 @@ Page({
   },
 
   goCamera() {
-    wx.switchTab({ url: '/pages/camera/camera' })
+    wx.switchTab({ url: '/pages/today/today' })
   },
 
   clearAllData() {

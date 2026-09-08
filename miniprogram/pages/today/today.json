@@ -1,6 +1,5 @@
 {
-  "usingComponents": {},
-  "navigationBarTitleText": "历史记录",
+  "navigationBarTitleText": "今天",
   "navigationBarBackgroundColor": "#faf7f4",
   "navigationBarTextStyle": "black"
 }

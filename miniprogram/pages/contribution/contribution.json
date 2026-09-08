@@ -1,4 +1,6 @@
 {
-  "navigationBarTitleText": "我的贡献",
+  "navigationBarTitleText": "我的",
+  "navigationBarBackgroundColor": "#faf7f4",
+  "navigationBarTextStyle": "black",
   "usingComponents": {}
 }

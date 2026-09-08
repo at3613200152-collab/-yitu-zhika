@@ -1,8 +1,6 @@
-// pages/nutritionist/nutritionist.js - 营养师页面
-// 支持：默认营养库生成 / 预设菜单(如饺子餐、商家推广) / 自定义食物池
+// pages/nutritionist/nutritionist.js - 饮食计划（可调整的建议，非强制菜单）
 const app = getApp()
 
-// 11 类（与后端 model/recipe 保持一致）
 const CATEGORY_IDS = [
   'dairy','dessert','egg','grain','meat','mixed','other',
   'sauce_condiment','seafood','soup_stew','vegetable'
@@ -12,193 +10,189 @@ const CATEGORY_ZH = {
   mixed:'混合餐食', other:'其他', sauce_condiment:'酱料调味品', seafood:'水产',
   soup_stew:'汤炖菜', vegetable:'蔬菜'
 }
-
-// 预设菜单（与后端 recipe/custom_menu.py PRESET_MENUS 对齐）
 const PRESETS = [
   { key: '', zh: '默认（营养库）' },
   { key: 'dumpling', zh: '饺子餐（预设）' },
   { key: 'merchant_demo', zh: '商家推广（预设）' }
 ]
+const MEAL_ZH = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐' }
+
+function recalc(food, grams) {
+  const p = food.per_100g
+  if (!p) return null
+  const f = grams / 100
+  return {
+    calories: Math.round(p.kcal * f * 10) / 10,
+    protein: Math.round((p.protein || 0) * f * 10) / 10,
+    carb: Math.round((p.carb || 0) * f * 10) / 10,
+    fat: Math.round((p.fat || 0) * f * 10) / 10
+  }
+}
 
 Page({
   data: {
-    // 表单
-    height: '170',
-    weight: '65',
-    age: '30',
-    gender: 'male',
+    height: '170', weight: '65', age: '30', gender: 'male',
     activityLevels: ['久坐', '轻度', '中度', '活跃', '极高'],
     activityValues: ['sedentary', 'light', 'moderate', 'active', 'very_active'],
-    activityIndex: 2,
-    goal: 'maintain',
-    allergies: [],
-    // 预设 / 自定义食物
-    presets: PRESETS.map(p => p.zh),
-    presetIndex: 0,
+    activityIndex: 2, goal: 'maintain', allergies: [],
+    presets: PRESETS.map(p => p.zh), presetIndex: 0,
     customFoods: [],
     foodFormName: '',
     foodCategoryIds: CATEGORY_IDS.map(id => CATEGORY_ZH[id]),
-    foodCategoryIndex: 3,   // grain
-    foodKcal: '',
-    foodGrams: '',
-    // 结果
+    foodCategoryIndex: 3,
+    foodKcal: '', foodGrams: '',
+    mealZh: MEAL_ZH,
     plan: null,
     loading: false
   },
 
-  onInput(e) {
-    const key = e.currentTarget.dataset.key
-    this.setData({ [key]: e.detail.value })
-  },
-
-  onGenderSelect(e) {
-    this.setData({ gender: e.currentTarget.dataset.v })
-  },
-
-  onActivityChange(e) {
-    this.setData({ activityIndex: parseInt(e.detail.value) })
-  },
-
-  onGoalSelect(e) {
-    this.setData({ goal: e.currentTarget.dataset.v })
-  },
-
+  onInput(e) { this.setData({ [e.currentTarget.dataset.key]: e.detail.value }) },
+  onGenderSelect(e) { this.setData({ gender: e.currentTarget.dataset.v }) },
+  onActivityChange(e) { this.setData({ activityIndex: parseInt(e.detail.value) }) },
+  onGoalSelect(e) { this.setData({ goal: e.currentTarget.dataset.v }) },
   toggleAllergy(e) {
     const v = e.currentTarget.dataset.v
-    const list = this.data.allergies
-    const idx = list.indexOf(v)
-    if (idx >= 0) { list.splice(idx, 1) } else { list.push(v) }
+    const list = this.data.allergies.slice()
+    const i = list.indexOf(v)
+    if (i >= 0) list.splice(i, 1); else list.push(v)
     this.setData({ allergies: list })
   },
 
-  // ---- 预设菜单 ----
-  onPresetChange(e) {
-    this.setData({ presetIndex: parseInt(e.detail.value) })
-  },
-
-  // ---- 自定义食物（用户补全数据）----
-  onFoodField(e) {
-    const key = e.currentTarget.dataset.key
-    this.setData({ [key]: e.detail.value })
-  },
-  onFoodCategory(e) {
-    this.setData({ foodCategoryIndex: parseInt(e.detail.value) })
-  },
+  onPresetChange(e) { this.setData({ presetIndex: parseInt(e.detail.value) }) },
+  onFoodField(e) { this.setData({ [e.currentTarget.dataset.key]: e.detail.value }) },
+  onFoodCategory(e) { this.setData({ foodCategoryIndex: parseInt(e.detail.value) }) },
   addCustomFood() {
     const name = (this.data.foodFormName || '').trim()
     const kcal = parseFloat(this.data.foodKcal)
     const grams = parseFloat(this.data.foodGrams)
     if (!name) { wx.showToast({ title: '请输入食物名', icon: 'none' }); return }
     if (!(kcal > 0)) { wx.showToast({ title: '请输入每100g热量', icon: 'none' }); return }
-    const catId = CATEGORY_IDS[this.data.foodCategoryIndex]
     const food = {
-      name: name,
-      category: catId,
-      kcal_per_100g: kcal,
-      protein_per_100g: 0,
-      carb_per_100g: 0,
-      fat_per_100g: 0,
+      name, category: CATEGORY_IDS[this.data.foodCategoryIndex],
+      kcal_per_100g: kcal, protein_per_100g: 0, carb_per_100g: 0, fat_per_100g: 0,
       default_grams: grams > 0 ? grams : 100
     }
-    const foods = this.data.customFoods.concat([food])
-    this.setData({
-      customFoods: foods,
-      foodFormName: '', foodKcal: '', foodGrams: ''
-    })
+    this.setData({ customFoods: this.data.customFoods.concat([food]), foodFormName: '', foodKcal: '', foodGrams: '' })
   },
   removeCustomFood(e) {
-    const idx = e.currentTarget.dataset.idx
     const foods = this.data.customFoods.slice()
-    foods.splice(idx, 1)
+    foods.splice(e.currentTarget.dataset.idx, 1)
     this.setData({ customFoods: foods })
   },
 
   async generatePlan() {
     const d = this.data
-    if (!d.height || !d.weight || !d.age) {
-      wx.showToast({ title: '请填写基本信息', icon: 'none' })
-      return
-    }
-    // 默认(营养库) 且无自定义食物 → 走原 /weekly-plan；否则走 /plan-from-menu
+    if (!d.height || !d.weight || !d.age) { wx.showToast({ title: '请填写基本信息', icon: 'none' }); return }
     const usePool = d.presetIndex > 0 || d.customFoods.length > 0
-
-    this.setData({ loading: true })
-
     const base = {
-      height_cm: parseFloat(d.height),
-      weight_kg: parseFloat(d.weight),
-      age: parseInt(d.age),
-      gender: d.gender,
-      activity_level: d.activityValues[d.activityIndex],
-      goal: d.goal,
-      allergies: d.allergies
+      height_cm: parseFloat(d.height), weight_kg: parseFloat(d.weight), age: parseInt(d.age),
+      gender: d.gender, activity_level: d.activityValues[d.activityIndex], goal: d.goal, allergies: d.allergies
     }
-
+    this.setData({ loading: true })
     try {
       let res
       if (usePool) {
-        const payload = Object.assign({}, base, {
-          preset: PRESETS[d.presetIndex].key || undefined,
-          foods: d.customFoods
-        })
-        res = await this.callPlanFromMenu(payload)
+        res = await this.callPlanFromMenu(Object.assign({}, base, { preset: PRESETS[d.presetIndex].key || undefined, foods: d.customFoods }))
       } else {
         res = await this.callWeeklyPlan(base)
       }
       if (res.statusCode === 200 && res.data.status === 'ok') {
-        this.setData({ plan: res.data })
-        wx.showToast({ title: '生成成功', icon: 'success' })
+        this.setData({ plan: res.data, loading: false })
+        wx.showToast({ title: '已生成建议', icon: 'success' })
       } else if (res.data.status === 'refused') {
-        wx.showModal({
-          title: '无法生成',
-          content: res.data.disclaimer || (res.data.message || '特殊人群需营养师审核'),
-          showCancel: false
-        })
+        wx.showModal({ title: '无法生成', content: res.data.disclaimer || (res.data.message || '特殊人群需营养师审核'), showCancel: false })
+        this.setData({ loading: false })
       } else {
-        wx.showModal({
-          title: '生成失败',
-          content: res.data.message || '未知错误',
-          showCancel: false
-        })
+        wx.showModal({ title: '生成失败', content: res.data.message || '未知错误', showCancel: false })
+        this.setData({ loading: false })
       }
     } catch (err) {
-      wx.showModal({
-        title: '网络错误',
-        content: err.errMsg || '请检查网络后重试',
-        showCancel: false
-      })
-    } finally {
+      wx.showModal({ title: '网络错误', content: err.errMsg || '请检查网络后重试', showCancel: false })
       this.setData({ loading: false })
     }
   },
 
   callWeeklyPlan(payload) {
     return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.apiBase + '/weekly-plan',
-        method: 'POST',
-        header: { 'X-API-Key': app.globalData.apiKey, 'Content-Type': 'application/json' },
-        data: payload,
-        success: resolve,
-        fail: reject
-      })
+      wx.request({ url: app.globalData.apiBase + '/weekly-plan', method: 'POST',
+        header: { 'X-API-Key': app.globalData.apiKey, 'Content-Type': 'application/json' }, data: payload, success: resolve, fail: reject })
     })
   },
-
   callPlanFromMenu(payload) {
     return new Promise((resolve, reject) => {
-      wx.request({
-        url: app.globalData.apiBase + '/plan-from-menu',
-        method: 'POST',
-        header: { 'X-API-Key': app.globalData.apiKey, 'Content-Type': 'application/json' },
-        data: payload,
-        success: resolve,
-        fail: reject
-      })
+      wx.request({ url: app.globalData.apiBase + '/plan-from-menu', method: 'POST',
+        header: { 'X-API-Key': app.globalData.apiKey, 'Content-Type': 'application/json' }, data: payload, success: resolve, fail: reject })
     })
   },
 
-  resetPlan() {
-    this.setData({ plan: null })
-  }
+  // ---- 计划调整 ----
+  swapFood(e) {
+    const { day, meal, food } = e.currentTarget.dataset
+    const plan = this.data.plan
+    const f = plan.daily_recipes[day].meals[meal].foods[food]
+    if (!f.substitutions || !f.substitutions.length) {
+      wx.showToast({ title: '这道暂无可替换的同类选项', icon: 'none' }); return
+    }
+    const sub = f.substitutions[0]
+    const grams = sub.grams_swap || f.grams
+    const nutrition = f.per_100g
+      ? recalc({ per_100g: { kcal: sub.kcal_per_100g_rag || f.per_100g.kcal, protein: f.per_100g.protein, carb: f.per_100g.carb, fat: f.per_100g.fat } }, grams)
+      : null
+    // 替换后仅 kcal 有来源，宏量标记为未知
+    const nutritionOut = nutrition ? { ...nutrition, protein: null, carb: null, fat: null } : null
+    f.name = sub.name
+    f.grams = grams
+    f.nutrition = nutritionOut
+    f.swapped = true
+    f.macro_unknown = true
+    this.recomputeDay(plan, day, meal)
+    this.setData({ plan })
+    wx.showToast({ title: '已换一道（按同类替换）', icon: 'success' })
+  },
+
+  adjustPortion(e) {
+    const { day, meal, food } = e.currentTarget.dataset
+    const plan = this.data.plan
+    const f = plan.daily_recipes[day].meals[meal].foods[food]
+    if (!f.per_100g) { wx.showToast({ title: '该食物暂无每百克营养，无法重算份量', icon: 'none' }); return }
+    wx.showModal({
+      title: '调整份量',
+      editable: true,
+      placeholderText: `当前 ${f.grams} 克`,
+      success: (res) => {
+        const grams = parseFloat(res.content)
+        if (!(grams > 0) || isNaN(grams)) { wx.showToast({ title: '请输入有效克数', icon: 'none' }); return }
+        const nutrition = recalc(f, grams)
+        f.grams = grams
+        f.nutrition = nutrition || f.nutrition
+        f.portion_edited = true
+        this.recomputeDay(plan, day, meal)
+        this.setData({ plan })
+        wx.showToast({ title: '已按新份量估算', icon: 'success' })
+      }
+    })
+  },
+
+  dislikeFood(e) {
+    const { day, meal, food } = e.currentTarget.dataset
+    const plan = this.data.plan
+    const mealRec = plan.daily_recipes[day].meals[meal]
+    const [removed] = mealRec.foods.splice(food, 1)
+    mealRec.removedNote = `已移除「${removed ? removed.name : '这道'}」`
+    this.recomputeDay(plan, day, meal)
+    this.setData({ plan })
+    wx.showToast({ title: '已从建议中移除', icon: 'none' })
+  },
+
+  recomputeDay(plan, day, meal) {
+    const days = plan.daily_recipes
+    if (!days[day] || !days[day].meals[meal]) return
+    const mealRec = days[day].meals[meal]
+    const sum = mealRec.foods.reduce((s, f) => s + (f.nutrition && f.nutrition.calories ? f.nutrition.calories : 0), 0)
+    mealRec.nutrition.calories = Math.round(sum * 10) / 10
+    const daySum = days[day].meals.reduce((s, m) => s + (m.nutrition.calories || 0), 0)
+    days[day].day_total_kcal = Math.round(daySum * 10) / 10
+  },
+
+  resetPlan() { this.setData({ plan: null }) }
 })

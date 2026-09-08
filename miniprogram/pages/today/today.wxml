@@ -1,0 +1,52 @@
+<view class="container">
+  <view class="hero">
+    <view class="hero-title">今天吃了什么？</view>
+    <view class="hero-date">{{dateLabel}}</view>
+  </view>
+
+  <!-- 记录区：一个主操作 + 一个次要操作 -->
+  <view class="record-actions">
+    <button class="btn-primary" bindtap="takePhoto" disabled="{{loading}}">
+      {{loading ? '识别中…' : '📷 拍照记录'}}
+    </button>
+    <button class="btn-secondary" bindtap="chooseAlbum" disabled="{{loading}}">从相册选择</button>
+  </view>
+
+  <!-- 今日餐食 -->
+  <block wx:if="{{hasAny}}">
+    <view class="section-head">
+      <text class="section-title">今日餐食</text>
+      <text class="section-meta">已记录 {{mealCount}} 餐</text>
+    </view>
+
+    <view class="meal card" wx:for="{{todayMeals}}" wx:key="id" bindtap="goResult" data-id="{{item.id}}">
+      <image class="meal-thumb" src="{{item.imagePath}}" mode="aspectFill"></image>
+      <view class="meal-info">
+        <view class="meal-name">{{item.result.category_name || '餐食'}}</view>
+        <view class="meal-time">{{item.timestamp}}</view>
+        <view class="meal-est">估算 {{item.result.calories}} kcal · {{item.result.weight}} g</view>
+      </view>
+      <text class="meal-edit">修改 ›</text>
+    </view>
+
+    <!-- 估算合计：命名明确，非"摄入总量" -->
+    <view class="sum card">
+      <view class="sum-label">已记录餐食的估算合计</view>
+      <view class="sum-value">{{sumCalories}} kcal</view>
+      <view class="sum-note">仅统计你今天已记录的餐次；未记录的餐次未计入，记录可能不完整。</view>
+    </view>
+  </block>
+
+  <!-- 空状态：友好引导，不显示失败 -->
+  <view class="empty" wx:else>
+    <view class="empty-emoji">🥣</view>
+    <view class="empty-text">从记录这一餐开始</view>
+    <view class="empty-hint">拍张照，帮你估算一份参考；也可以先从相册选一张。</view>
+  </view>
+
+  <view class="history-entry" bindtap="goHistory">查看全部历史 ›</view>
+
+  <view class="disclaimer">
+    估算结果仅供饮食记录参考，不构成医疗或营养诊断。
+  </view>
+</view>

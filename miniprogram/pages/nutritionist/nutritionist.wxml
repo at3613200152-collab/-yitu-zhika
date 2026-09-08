@@ -1,23 +1,13 @@
-<!-- pages/nutritionist/nutritionist.wxml - 营养师页面 -->
 <view class="container">
+  <view class="page-title">饮食计划</view>
+
   <!-- 输入表单 -->
   <view class="card" wx:if="{{!plan}}">
-    <view class="title">营养师</view>
-    <view class="subtitle">输入基本信息，生成 7 天饮食参考</view>
+    <view class="subtitle">填几项基本信息，为你生成一周饮食参考。这是可调整的建议，不是必须执行的菜单。</view>
 
-    <view class="section-title">基本信息</view>
-    <view class="form-row">
-      <text class="form-label">身高(cm)</text>
-      <input class="form-input" type="digit" value="{{height}}" bindinput="onInput" data-key="height" placeholder="170" />
-    </view>
-    <view class="form-row">
-      <text class="form-label">体重(kg)</text>
-      <input class="form-input" type="digit" value="{{weight}}" bindinput="onInput" data-key="weight" placeholder="65" />
-    </view>
-    <view class="form-row">
-      <text class="form-label">年龄</text>
-      <input class="form-input" type="digit" value="{{age}}" bindinput="onInput" data-key="age" placeholder="30" />
-    </view>
+    <view class="form-row"><text class="form-label">身高(cm)</text><input class="form-input" type="digit" value="{{height}}" bindinput="onInput" data-key="height" /></view>
+    <view class="form-row"><text class="form-label">体重(kg)</text><input class="form-input" type="digit" value="{{weight}}" bindinput="onInput" data-key="weight" /></view>
+    <view class="form-row"><text class="form-label">年龄</text><input class="form-input" type="digit" value="{{age}}" bindinput="onInput" data-key="age" /></view>
 
     <view class="form-row">
       <text class="form-label">性别</text>
@@ -25,13 +15,6 @@
         <button class="opt {{gender === 'male' ? 'opt-active' : ''}}" bindtap="onGenderSelect" data-v="male">男</button>
         <button class="opt {{gender === 'female' ? 'opt-active' : ''}}" bindtap="onGenderSelect" data-v="female">女</button>
       </view>
-    </view>
-
-    <view class="form-row">
-      <text class="form-label">活动水平</text>
-      <picker mode="selector" range="{{activityLevels}}" value="{{activityIndex}}" bindchange="onActivityChange">
-        <view class="picker">{{activityLevels[activityIndex]}}</view>
-      </picker>
     </view>
 
     <view class="form-row">
@@ -53,17 +36,15 @@
       <view class="chip {{allergies.includes('羊肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
     </view>
 
-    <view class="section-title">饮食范围（可选）</view>
+    <view class="section-title">饮食范围（可选，预设或自定义食物）</view>
     <view class="form-row">
       <text class="form-label">饮食范围</text>
       <picker mode="selector" range="{{presets}}" value="{{presetIndex}}" bindchange="onPresetChange">
         <view class="picker">{{presets[presetIndex]}}</view>
       </picker>
     </view>
-
-    <view class="section-title">自定义食物（补全数据）</view>
     <view class="form-row food-add">
-      <input class="form-input" placeholder="名称" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />
+      <input class="form-input" placeholder="食物名" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />
       <picker class="food-cat" mode="selector" range="{{foodCategoryIds}}" value="{{foodCategoryIndex}}" bindchange="onFoodCategory">
         <view class="picker">{{foodCategoryIds[foodCategoryIndex]}}</view>
       </picker>
@@ -75,39 +56,59 @@
     </view>
     <view class="food-list" wx:if="{{customFoods.length > 0}}">
       <view class="food-item" wx:for="{{customFoods}}" wx:key="index">
-        <text class="food-txt">{{item.name}}（{{item.kcal_per_100g}} kcal/100g，{{item.default_grams}}g）</text>
+        <text>{{item.name}}（{{item.kcal_per_100g}}kcal/100g，{{item.default_grams}}g）</text>
         <text class="del" bindtap="removeCustomFood" data-idx="{{index}}">删除</text>
       </view>
     </view>
 
     <button class="btn-primary" bindtap="generatePlan" loading="{{loading}}" disabled="{{loading}}">
-      {{loading ? '生成中...' : '生成 7 天食谱'}}
+      {{loading ? '生成中…' : '生成一周饮食建议'}}
     </button>
   </view>
 
-  <!-- 食谱结果 -->
-  <view class="card" wx:if="{{plan}}">
-    <view class="title">7 天饮食参考</view>
-    <view class="summary-row">
-      <view class="summary-item">
-        <text class="summary-num">{{plan.targets.kcal}}</text>
-        <text class="summary-label">目标 kcal/天</text>
-      </view>
+  <!-- 计划结果 -->
+  <block wx:else>
+    <view class="plan-banner">
+      AI 建议草案 · 非处方 · 未经营养师审核 · 可按你的习惯调整
     </view>
 
-    <view class="day-block" wx:for="{{plan.daily_recipes}}" wx:for-item="day" wx:key="day">
-      <view class="day-title">第 {{day.day}} 天 ({{day.day_total_kcal}} kcal)</view>
-      <view class="meal-block" wx:for="{{day.meals}}" wx:for-item="meal" wx:key="meal_name">
-        <view class="meal-title">{{meal.meal_name === 'breakfast' ? '早餐' : meal.meal_name === 'lunch' ? '午餐' : '晚餐'}} ({{meal.nutrition.calories}} kcal)</view>
-        <view class="food-row" wx:for="{{meal.foods}}" wx:for-item="food" wx:key="name">
-          <text class="food-name">{{food.name}}</text>
-          <text class="food-grams">{{food.grams}}g</text>
-          <text class="food-kcal">{{food.nutrition.calories}} kcal</text>
+    <view class="day card" wx:for="{{plan.daily_recipes}}" wx:for-item="day" wx:key="day">
+      <view class="day-head">
+        <view class="day-title">第 {{day.day}} 天 · {{day.date}}</view>
+        <view class="day-kcal">{{day.day_total_kcal}} kcal<text class="day-target"> / 目标 {{day.target_kcal}}</text></view>
+      </view>
+
+      <view class="meal-block" wx:for="{{day.meals}}" wx:for-item="meal" wx:for-index="mi" wx:key="meal_name">
+        <view class="meal-title">{{mealZh[meal.meal_name] || meal.meal_name}} · {{meal.nutrition.calories}} kcal</view>
+
+        <view class="food card-inner" wx:for="{{meal.foods}}" wx:for-item="f" wx:for-index="fi" wx:key="index">
+          <view class="food-head">
+            <view class="food-name">{{f.name}}</view>
+            <view class="food-grams">{{f.grams}}g<text class="raw-tag" wx:if="{{f.cooked_or_raw}}">（{{f.cooked_or_raw === 'cooked' ? '熟' : f.cooked_or_raw === 'raw' ? '生' : f.cooked_or_raw}}）</text></view>
+          </view>
+          <view class="food-nutri">
+            <text>{{f.nutrition.calories}} kcal</text>
+            <text wx:if="{{f.macro_unknown}}">宏量 待确认</text>
+            <block wx:else>
+              <text>蛋白 {{f.nutrition.protein}}g</text>
+              <text>碳水 {{f.nutrition.carb}}g</text>
+              <text>脂肪 {{f.nutrition.fat}}g</text>
+            </block>
+          </view>
+          <view class="food-actions">
+            <text class="act" bindtap="swapFood" data-day="{{day.day - 1}}" data-meal="{{mi}}" data-food="{{fi}}">换一道</text>
+            <text class="act" bindtap="adjustPortion" data-day="{{day.day - 1}}" data-meal="{{mi}}" data-food="{{fi}}">调整份量</text>
+            <text class="act dislike" bindtap="dislikeFood" data-day="{{day.day - 1}}" data-meal="{{mi}}" data-food="{{fi}}">不喜欢</text>
+          </view>
         </view>
+
+        <view class="removed-note" wx:if="{{meal.removedNote}}">{{meal.removedNote}}</view>
       </view>
     </view>
 
-    <view class="disclaimer">{{plan.disclaimer}}</view>
-    <button class="btn-secondary" bindtap="resetPlan">重新生成</button>
-  </view>
+    <view class="plan-foot">
+      <view class="disclaimer">{{plan.disclaimer}}</view>
+      <button class="btn-secondary" bindtap="resetPlan">重新生成</button>
+    </view>
+  </block>
 </view>

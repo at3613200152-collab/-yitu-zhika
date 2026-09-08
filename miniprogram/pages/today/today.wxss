@@ -1,0 +1,37 @@
+/* pages/today/today.wxss */
+.container { padding: 32rpx 28rpx 48rpx; background: #faf7f4; min-height: 100vh; }
+
+.hero { margin-top: 8rpx; }
+.hero-title { font-size: 44rpx; font-weight: 700; color: #2a2e31; }
+.hero-date { font-size: 26rpx; color: #6b7280; margin-top: 6rpx; }
+
+.record-actions { margin-top: 32rpx; }
+
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 8rpx; }
+.section-title { font-size: 32rpx; font-weight: 700; color: #2a2e31; }
+.section-meta { font-size: 24rpx; color: #1f7a4d; }
+
+/* 餐食卡片 */
+.meal { display: flex; align-items: center; gap: 20rpx; }
+.meal-thumb { width: 120rpx; height: 120rpx; border-radius: 16rpx; background: #f1ece7; flex-shrink: 0; }
+.meal-info { flex: 1; min-width: 0; }
+.meal-name { font-size: 30rpx; font-weight: 600; color: #2a2e31; }
+.meal-time { font-size: 22rpx; color: #9aa0a6; margin-top: 4rpx; }
+.meal-est { font-size: 24rpx; color: #6b7280; margin-top: 8rpx; }
+.meal-edit { font-size: 24rpx; color: #1f7a4d; flex-shrink: 0; }
+
+/* 估算合计 */
+.sum { text-align: center; }
+.sum-label { font-size: 26rpx; color: #6b7280; }
+.sum-value { font-size: 56rpx; font-weight: 800; color: #1f7a4d; margin-top: 8rpx; }
+.sum-note { font-size: 22rpx; color: #9aa0a6; margin-top: 12rpx; line-height: 1.6; }
+
+/* 空状态 */
+.empty { text-align: center; padding: 80rpx 32rpx; }
+.empty-emoji { font-size: 88rpx; }
+.empty-text { font-size: 32rpx; font-weight: 600; color: #2a2e31; margin-top: 20rpx; }
+.empty-hint { font-size: 26rpx; color: #6b7280; margin-top: 12rpx; line-height: 1.6; }
+
+.history-entry { text-align: center; margin-top: 16rpx; color: #6b7280; font-size: 26rpx; padding: 16rpx; }
+
+.disclaimer { font-size: 22rpx; color: #9aa0a6; text-align: center; margin-top: 24rpx; line-height: 1.6; }

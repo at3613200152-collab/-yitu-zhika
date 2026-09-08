@@ -232,6 +232,12 @@ def plan_from_pool(
                     "category": food.category,
                     "grams": grams,
                     "nutrition": nut,
+                    "per_100g": {
+                        "kcal": round(food.kcal_per_100g, 1),
+                        "protein": round(food.protein_per_100g, 1),
+                        "carb": round(food.carb_per_100g, 1),
+                        "fat": round(food.fat_per_100g, 1),
+                    },
                     "source": {"type": food.source_type, "ref": food.source_ref or None},
                     "status": "pool",
                     "verification": food.source_type,

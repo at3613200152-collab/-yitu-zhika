@@ -192,6 +192,12 @@ class TemplatePlanner:
                         "grams": grams,
                         "cooked_or_raw": food.get("cooked_or_raw", "cooked"),
                         "nutrition": nut,
+                        "per_100g": {
+                            "kcal": round(food["kcal_per_100g"], 1),
+                            "protein": round(food["protein_per_100g"], 1),
+                            "carb": round(food["carb_per_100g"], 1),
+                            "fat": round(food["fat_per_100g"], 1),
+                        },
                         "source": {
                             "row_id": food["row_id"],
                             "file": food["source_file"],

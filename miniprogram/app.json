@@ -1,40 +1,35 @@
 {
   "pages": [
-    "pages/camera/camera",
+    "pages/today/today",
     "pages/result/result",
-    "pages/history/history",
-    "pages/contribution/contribution",
-    "pages/onboarding/onboarding",
     "pages/nutritionist/nutritionist",
-    "pages/about/about"
+    "pages/contribution/contribution",
+    "pages/history/history",
+    "pages/about/about",
+    "pages/onboarding/onboarding",
+    "pages/camera/camera"
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#4CAF50",
+    "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "一图知卡",
-    "navigationBarTextStyle": "white"
+    "navigationBarTextStyle": "black"
   },
   "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#4CAF50",
+    "color": "#86909c",
+    "selectedColor": "#07c160",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/camera/camera",
-        "text": "拍照",
+        "pagePath": "pages/today/today",
+        "text": "今天",
         "iconPath": "assets/tabbar/camera.png",
         "selectedIconPath": "assets/tabbar/camera_active.png"
       },
       {
-        "pagePath": "pages/history/history",
-        "text": "历史",
-        "iconPath": "assets/tabbar/history.png",
-        "selectedIconPath": "assets/tabbar/history_active.png"
-      },
-      {
         "pagePath": "pages/nutritionist/nutritionist",
-        "text": "营养师",
+        "text": "饮食计划",
         "iconPath": "assets/tabbar/nutritionist.png",
         "selectedIconPath": "assets/tabbar/nutritionist_active.png"
       },

@@ -1,7 +1,7 @@
-/**app.wxss - 一图知卡 全局视觉 */
+/**app.wxss - 一图知卡 全局视觉（温和、可信、有掌控感）*/
 page {
-  background: #f6f7fb;
-  color: #1f2329;
+  background: #faf7f4;               /* 暖白 */
+  color: #2a2e31;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
@@ -9,99 +9,70 @@ page {
   padding: 28rpx 24rpx 48rpx;
   min-height: 100vh;
   box-sizing: border-box;
-  background-color: #f6f7fb;
+  background-color: #faf7f4;
 }
 
 /* 卡片 */
 .card {
   background: #ffffff;
-  border-radius: 24rpx;
+  border-radius: 20rpx;
   padding: 32rpx;
   margin: 20rpx 0;
   width: 100%;
   box-sizing: border-box;
-  box-shadow: 0 8rpx 28rpx rgba(31, 64, 118, 0.06);
-  border: 1rpx solid rgba(31, 64, 118, 0.04);
+  box-shadow: 0 4rpx 16rpx rgba(74, 58, 41, 0.06);
+  border: 1rpx solid #f0ece7;
 }
 
-/* 主按钮：渐变胶囊 */
+/* 主按钮：深绿色主操作 */
 .btn-primary {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 96rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #07c160, #35d97a);
+  background: #1f7a4d;              /* 深绿主操作 */
   color: #ffffff;
   font-size: 32rpx;
   font-weight: 600;
-  letter-spacing: 1rpx;
-  box-shadow: 0 12rpx 24rpx rgba(7, 193, 96, 0.24);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 10rpx 20rpx rgba(31, 122, 77, 0.22);
+  transition: transform 0.12s ease, background 0.12s ease;
 }
-.btn-primary:active {
-  transform: scale(0.97);
-  box-shadow: 0 6rpx 14rpx rgba(7, 193, 96, 0.2);
-}
-.btn-primary[disabled] {
-  background: linear-gradient(135deg, #c8c9cc, #d6d7db);
-  box-shadow: none;
-  color: #ffffff;
-}
+.btn-primary:active { background: #185f3b; transform: scale(0.98); }
+.btn-primary[disabled] { background: #cdd4d0; box-shadow: none; color: #ffffff; }
 
+/* 次要按钮 */
 .btn-secondary {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 88rpx;
   border-radius: 999rpx;
-  background: #f0f1f4;
-  color: #4b5563;
+  background: #ffffff;
+  color: #4a4e52;
   font-size: 28rpx;
+  border: 1rpx solid #e4ddd6;
   margin-top: 16rpx;
 }
+.btn-secondary:active { background: #f6f2ee; }
 
-.title {
-  font-size: 38rpx;
-  font-weight: 700;
-  color: #1f2329;
-  margin-bottom: 12rpx;
-}
+/* 文本链接（降低权重但仍可发现） */
+.link { color: #1f7a4d; font-size: 26rpx; }
 
-.value {
-  font-size: 34rpx;
-  color: #07c160;
-  font-weight: 600;
-}
-
-.label {
-  font-size: 28rpx;
-  color: #86909c;
-  margin-top: 8rpx;
-}
-
-.warning {
-  color: #ff9f0a;
-  font-size: 26rpx;
-  margin-top: 16rpx;
-}
-
-.disclaimer {
-  font-size: 24rpx;
-  color: #86909c;
-  margin-top: 16rpx;
-  text-align: center;
-  line-height: 1.6;
-}
+.title { font-size: 38rpx; font-weight: 700; color: #2a2e31; margin-bottom: 12rpx; }
+.subtitle { font-size: 26rpx; color: #6b7280; }
+.label { font-size: 28rpx; color: #6b7280; margin-top: 8rpx; }
+.value { font-size: 34rpx; color: #1f7a4d; font-weight: 600; }
+.warning { color: #e8833a; font-size: 26rpx; margin-top: 16rpx; }
+.disclaimer { font-size: 24rpx; color: #9aa0a6; margin-top: 16rpx; text-align: center; line-height: 1.6; }
 
 .input {
-  border: 2rpx solid transparent;
-  background: #f5f6f8;
-  border-radius: 16rpx;
+  border: 1rpx solid #e4ddd6;
+  background: #ffffff;
+  border-radius: 14rpx;
   padding: 20rpx 24rpx;
   font-size: 30rpx;
   width: 100%;
   box-sizing: border-box;
   margin: 12rpx 0;
 }
-.input:focus { border-color: #07c160; background: #ffffff; }

@@ -13,7 +13,7 @@ Page({
     const profile = wx.getStorageSync('user_profile')
     if (profile && profile.completed) {
       // 已完成，直接跳回拍照页
-      wx.switchTab({ url: '/pages/camera/camera' })
+      wx.switchTab({ url: '/pages/today/today' })
     }
   },
 
@@ -53,7 +53,7 @@ Page({
     app.globalData.userProfile = profile
     wx.showToast({ title: '已保存', icon: 'success' })
     setTimeout(() => {
-      wx.switchTab({ url: '/pages/camera/camera' })
+      wx.switchTab({ url: '/pages/today/today' })
     }, 800)
   },
 
