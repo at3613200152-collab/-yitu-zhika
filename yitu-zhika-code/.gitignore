@@ -10,8 +10,10 @@ build/
 data/
 !data/.gitkeep
 # 但 src/data 是源码数据管线（加载器/标签构建/manifest），必须入库，不被上面 data/ 误伤
+# 只放行源码文件，不放行 __pycache__/ 等
 !src/data/
-!src/data/**
+!src/data/*.py
+!src/data/README.md
 
 # Checkpoints (模型权重，体积大)
 checkpoints/
