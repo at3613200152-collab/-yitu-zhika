@@ -46,6 +46,10 @@ _pipeline_lock = threading.Lock()
 # P0: 鉴权配置
 API_KEY = os.environ.get("INFERENCE_API_KEY", "dev-key-change-in-prod")
 
+# 商家端 / 审核端密钥（生产必须替换为独立强随机串，勿与用户端共用）
+MERCHANT_API_KEY = os.environ.get("MERCHANT_API_KEY", "dev-merchant-key")
+ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "dev-admin-key")
+
 # P0: 上线模型固定（见 docs/model_card.md）
 # 不依赖测试集成绩挑模型，按 audit 完整性选定
 ONLINE_MODEL_PATH = ROOT / "checkpoints" / "meal_rgb_official_v1" / "best.pt"
@@ -135,8 +139,12 @@ def error_response(message: str, status_code: int, code: str = None):
 @app.before_request
 def auth_and_limit():
     """P0: 所有请求前的鉴权 + 限流。"""
+    path = request.path
     # health 端点开放（用于小程序探活）
-    if request.path == "/health" and request.method == "GET":
+    if path == "/health" and request.method == "GET":
+        return None
+    # 公开菜单 / 商家端 / 审核端：使用各自独立密钥，不走用户端 API key
+    if path == "/public/menus" or path.startswith("/merchant/") or path == "/admin/review":
         return None
 
     # 鉴权
@@ -702,8 +710,26 @@ def plan_from_menu():
         special_population=bool(data.get("special_population", False)),
     )
 
-    # 组装食物池：预设 + 用户补全
+    # 组装食物池：商家菜单(menu_id) + 预设 + 用户补全
     foods = []
+    menu_id = str(data.get("menu_id", "")).strip()
+    if menu_id:
+        from app import merchant
+        products = merchant.get_menu_products(menu_id)
+        if products is None:
+            return error_response("菜单不存在或未通过审核", 400, "UNKNOWN_MENU")
+        for p in products:
+            raw = {
+                "name": p["name"], "category": p.get("category"), "kcal_per_100g": p.get("kcal_per_100g"),
+                "protein_per_100g": p.get("protein_per_100g"), "carb_per_100g": p.get("carb_per_100g"),
+                "fat_per_100g": p.get("fat_per_100g"), "default_grams": p.get("default_grams"),
+                "source_type": "merchant", "source_ref": menu_id,
+            }
+            item, err = validate_food(raw)
+            if err:
+                return error_response(f"菜单产品「{p['name']}」无效：{err}", 400, "INVALID_FOOD")
+            foods.append(item)
+
     preset_name = str(data.get("preset", "")).strip()
     if preset_name:
         preset_foods, pname, pdesc = foods_from_preset(preset_name)
@@ -736,6 +762,85 @@ def plan_from_menu():
     except Exception as e:
         logger.error(f"plan-from-menu failed: {e}", exc_info=True)
         return error_response(f"饮食安排生成失败：{e}", 500, "PLAN_FAILED")
+
+
+@app.route("/merchant/menu", methods=["POST"])
+def merchant_create_menu():
+    """商家端：商家创建自己的菜单与产品（需 X-Merchant-Key）。审核前不对外展示。"""
+    key = request.headers.get("X-Merchant-Key", "")
+    if key != MERCHANT_API_KEY:
+        return error_response("未授权：商家密钥无效", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+    merchant_name = str(data.get("merchant_name", "")).strip()
+    menu_name = str(data.get("menu_name", "")).strip()
+    products = data.get("products")
+    if not merchant_name or not menu_name:
+        return error_response("缺少 merchant_name 或 menu_name", 400, "MISSING_PARAM")
+    if not isinstance(products, list) or not products:
+        return error_response("products 需为非空数组", 400, "INVALID_PRODUCTS")
+    for p in products:
+        if not p.get("name") or p.get("kcal_per_100g") is None:
+            return error_response("每个产品需有 name 和 kcal_per_100g", 400, "INVALID_PRODUCTS")
+    try:
+        from app import merchant
+        menu_id = merchant.create_menu(merchant_name, menu_name, products, data.get("desc"))
+    except Exception as e:
+        logger.error(f"merchant create failed: {e}", exc_info=True)
+        return error_response(f"创建菜单失败：{e}", 500, "MERCHANT_FAILED")
+    return jsonify({"status": "ok", "menu_id": menu_id, "review_status": "pending"})
+
+
+@app.route("/merchant/menus", methods=["GET"])
+def merchant_list_menus():
+    """商家查自己的菜单（需 X-Merchant-Key）。"""
+    key = request.headers.get("X-Merchant-Key", "")
+    if key != MERCHANT_API_KEY:
+        return error_response("未授权：商家密钥无效", 401, "UNAUTHORIZED")
+    try:
+        from app import merchant
+        merchant_name = request.args.get("merchant_name")
+        menus = merchant.list_menus(merchant_name)
+    except Exception as e:
+        return error_response(f"查询失败：{e}", 500, "MERCHANT_FAILED")
+    return jsonify({"status": "ok", "menus": menus})
+
+
+@app.route("/admin/review", methods=["POST"])
+def admin_review():
+    """审核端：设置菜单审核状态（pending/approved/excluded）（需 X-Admin-Key）。"""
+    key = request.headers.get("X-Admin-Key", "")
+    if key != ADMIN_API_KEY:
+        return error_response("未授权：审核密钥无效", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+    menu_id = data.get("menu_id")
+    status = data.get("status")
+    if not menu_id or not status:
+        return error_response("缺少 menu_id/status", 400, "MISSING_PARAM")
+    try:
+        from app import merchant
+        ok = merchant.set_review(menu_id, status)
+    except ValueError as e:
+        return error_response(str(e), 400, "INVALID_STATUS")
+    except Exception as e:
+        return error_response(f"审核失败：{e}", 500, "REVIEW_FAILED")
+    return jsonify({"status": "ok", "menu_id": menu_id, "review_status": status, "updated": ok})
+
+
+@app.route("/public/menus", methods=["GET"])
+def public_menus():
+    """用户侧公开菜单列表：仅返回已审核通过的商家菜单。"""
+    try:
+        from app import merchant
+        menus = merchant.public_menus()
+    except Exception as e:
+        return error_response(f"查询失败：{e}", 500, "MERCHANT_FAILED")
+    return jsonify({"status": "ok", "menus": menus})
 
 
 def main():

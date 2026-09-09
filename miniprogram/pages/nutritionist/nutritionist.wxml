@@ -36,12 +36,19 @@
       <view class="chip {{allergies.includes('羊肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
     </view>
 
-    <view class="section-title">饮食范围（可选，预设或自定义食物）</view>
+    <view class="section-title">饮食范围（可选，商家菜单或自定义）</view>
     <view class="form-row">
       <text class="form-label">饮食范围</text>
-      <picker mode="selector" range="{{presets}}" value="{{presetIndex}}" bindchange="onPresetChange">
-        <view class="picker">{{presets[presetIndex]}}</view>
+      <picker mode="selector" range="{{menuOptions}}" value="{{presetIndex}}" bindchange="onPresetChange">
+        <view class="picker">{{menuOptions[presetIndex]}}</view>
       </picker>
+    </view>
+    <view class="merchant-dishes" wx:if="{{presetIndex > 0 && merchantMenus.length > 0}}">
+      <view class="dish" wx:for="{{merchantMenus[presetIndex - 1].products}}" wx:for-item="p" wx:key="product_id">
+        <text class="dish-name">{{p.name}}</text>
+        <text class="dish-kcal">{{p.kcal_per_100g}} kcal/100g</text>
+      </view>
+      <view class="dish-note">以上为商家提供菜品（含每100g营养），选中后按这些菜生成计划；每100g营养由商家上传，仅作参考。</view>
     </view>
     <view class="form-row food-add">
       <input class="form-input" placeholder="食物名" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />

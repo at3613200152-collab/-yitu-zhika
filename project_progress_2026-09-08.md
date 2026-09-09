@@ -227,6 +227,18 @@ JS 语法、JSON 合法性、前后端字段契约，node 校验全部通过）�
 - 实测：/record(含授权 user_estimate, consent=1)、/record(未同意 model_only, consent=0)、/annotate(带图, review_status=pending, 图片落盘 27KB)、/consent 均返回 ok。
 - 待办（后续）：标注审核/管理端、删除申请与数据保留期说明、capture_session 多角度关联的引导交互、部署加固（gunicorn/nginx/HTTPS/私有存储访问控制）、训练管线（含防泄漏划分与独立评测）、以及微信平台隐私声明与发布审核。
 
+### 3.8 商家菜单（商家端 / 商家上传菜品营养）
+
+- 背景：不再把开发性质的"饺子餐(预设)/商家推广(预设)"直接暴露给用户。
+- 后端 `app/merchant.py`（merchant_menus/merchant_products）+ 端点：
+  - `POST /merchant/menu`（X-Merchant-Key）商家上传菜单与菜品（含每100g kcal/protein/carb/fat、default_grams）
+  - `GET /merchant/menus`（商家查自己菜单）；`POST /admin/review`（X-Admin-Key 审）
+  - `GET /public/menus`（公开，仅返回 approved 菜单+菜品）
+  - `plan-from-menu` 支持 `menu_id`：从 approved 菜单菜品生成饮食计划
+- 前端「饮食计划」：撤掉"预设"下拉，改为加载 `/public/menus` 动态选项；选中商家菜单时**直接列出菜品及每100g营养**；默认仍走营养库。
+- 实测：创建(商家) → approved(审核) → public 返回菜品(128/152/45 kcal/100g) → plan-by-menu 生成计划；未授权(用户API key)进商家/审核端点被正确拦截。
+- 说明：商家上传营养属"商家提供"层，未经核验不进入训练真值；样例菜单已标注"开发样例数据"。
+
 ---
 
 ## 四、下一步工作清单

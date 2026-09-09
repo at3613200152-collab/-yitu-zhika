@@ -10,11 +10,6 @@ const CATEGORY_ZH = {
   mixed:'混合餐食', other:'其他', sauce_condiment:'酱料调味品', seafood:'水产',
   soup_stew:'汤炖菜', vegetable:'蔬菜'
 }
-const PRESETS = [
-  { key: '', zh: '默认（营养库）' },
-  { key: 'dumpling', zh: '饺子餐（预设）' },
-  { key: 'merchant_demo', zh: '商家推广（预设）' }
-]
 const MEAL_ZH = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐' }
 
 function recalc(food, grams) {
@@ -35,7 +30,11 @@ Page({
     activityLevels: ['久坐', '轻度', '中度', '活跃', '极高'],
     activityValues: ['sedentary', 'light', 'moderate', 'active', 'very_active'],
     activityIndex: 2, goal: 'maintain', allergies: [],
-    presets: PRESETS.map(p => p.zh), presetIndex: 0,
+    presets: undefined,
+    menuOptions: ['默认（营养库）'],
+    merchantMenus: [],
+    menuId: '',
+    presetIndex: 0,
     customFoods: [],
     foodFormName: '',
     foodCategoryIds: CATEGORY_IDS.map(id => CATEGORY_ZH[id]),
@@ -58,7 +57,31 @@ Page({
     this.setData({ allergies: list })
   },
 
-  onPresetChange(e) { this.setData({ presetIndex: parseInt(e.detail.value) }) },
+  onLoad() {
+    this.loadMenus()
+  },
+
+  // 拉取已审核的商家菜单，动态生成"饮食范围"选项
+  loadMenus() {
+    wx.request({
+      url: app.globalData.apiBase + '/public/menus',
+      method: 'GET',
+      success: (res) => {
+        try {
+          const menus = (res.data && res.data.menus) || []
+          const opt = ['默认（营养库）'].concat(menus.map(m => `${m.merchant_name}·${m.menu_name}`))
+          this.setData({ merchantMenus: menus, menuOptions: opt })
+        } catch (e) {}
+      },
+      fail: () => {}
+    })
+  },
+
+  onPresetChange(e) {
+    const i = parseInt(e.detail.value)
+    const menuId = (i > 0 && this.data.merchantMenus[i - 1]) ? this.data.merchantMenus[i - 1].menu_id : ''
+    this.setData({ presetIndex: i, menuId: menuId })
+  },
   onFoodField(e) { this.setData({ [e.currentTarget.dataset.key]: e.detail.value }) },
   onFoodCategory(e) { this.setData({ foodCategoryIndex: parseInt(e.detail.value) }) },
   addCustomFood() {
@@ -83,7 +106,7 @@ Page({
   async generatePlan() {
     const d = this.data
     if (!d.height || !d.weight || !d.age) { wx.showToast({ title: '请填写基本信息', icon: 'none' }); return }
-    const usePool = d.presetIndex > 0 || d.customFoods.length > 0
+    const usePool = !!d.menuId || d.customFoods.length > 0
     const base = {
       height_cm: parseFloat(d.height), weight_kg: parseFloat(d.weight), age: parseInt(d.age),
       gender: d.gender, activity_level: d.activityValues[d.activityIndex], goal: d.goal, allergies: d.allergies
@@ -92,7 +115,7 @@ Page({
     try {
       let res
       if (usePool) {
-        res = await this.callPlanFromMenu(Object.assign({}, base, { preset: PRESETS[d.presetIndex].key || undefined, foods: d.customFoods }))
+        res = await this.callPlanFromMenu(Object.assign({}, base, { menu_id: d.menuId || undefined, foods: d.customFoods }))
       } else {
         res = await this.callWeeklyPlan(base)
       }
