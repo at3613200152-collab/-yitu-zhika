@@ -51,11 +51,21 @@ def resume_state(path, config):
     if state['config'] != config:
         raise ValueError('Checkpoint protocol/code/data changed; choose a new version')
     history = state['history']
+    if not history:
+        raise ValueError('Empty checkpoint history')
     if [h['epoch'] for h in history] != list(range(1, state['epoch']+1)):
         raise ValueError('Incomplete checkpoint history')
     selected = min(history, key=lambda h: h['val']['reg_normalized_l1'])
     if selected['epoch'] != state['best_epoch']:
         raise ValueError('Checkpoint selection does not match validation history')
+    # P0-B: 完成状态必须可由「达到预算」或「有效早停」推出，不能只信任布尔值。
+    if state.get('training_complete'):
+        epochs = config.get('epochs')
+        patience = config.get('patience')
+        budget_reached = epochs is not None and state['epoch'] >= epochs
+        early_stopped = patience is not None and (state['epoch'] - state['best_epoch']) >= patience
+        if not (budget_reached or early_stopped):
+            raise ValueError('training_complete not supported by budget/early-stopping')
     return state
 
 
