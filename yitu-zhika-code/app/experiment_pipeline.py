@@ -11,8 +11,13 @@ from torchvision.transforms import functional as TF
 from scripts.capsicum_job import file_digest
 from src.training.train_meal_official import MealNet, MEAN, STD, MANIFEST, MANIFEST_SHA
 from src.training.train_meal_nir_official import NirMealNet
+from src.models.meal_macros_net import MealMacrosNet
 
 ROOT = Path(__file__).resolve().parents[1]
+# 五头宏量模型（P1-B）：接入在线 predict 后，主输出(热量/重量/类别/宏量)来自此模型
+MACROS_VERSION = 'meal_macros_v1'
+MACROS_CKPT = ROOT / 'checkpoints/meal_macros_v1/v1/best.pt'
+MACROS_MANIFEST = ROOT / 'results/meal_macros_v1/manifest.json'
 CATEGORY_ZH = {'dairy': '乳制品', 'dessert': '甜点', 'egg': '蛋类', 'grain': '谷物主食',
     'meat': '肉类', 'mixed': '混合餐食', 'other': '其他', 'sauce_condiment': '酱料调味品',
     'seafood': '水产', 'soup_stew': '汤炖菜', 'vegetable': '蔬菜'}
@@ -71,6 +76,27 @@ class ExperimentPipeline:
         self.nir.to(self.device).eval()
         self.external = None
         self.external_transform = None
+        self.macros = None
+        self.macros_version = None
+        self.macros_sha = None
+
+    def load_macros_if_ready(self):
+        """P1-B：加载五头宏量模型（若 checkpoint 存在），主输出切换到宏量模型。"""
+        if self.macros is not None:
+            return 'loaded'
+        if not MACROS_CKPT.exists() or not MACROS_MANIFEST.exists():
+            return 'not_available'
+        import hashlib as _hl
+        macros_manifest = read(MACROS_MANIFEST)
+        ck = torch.load(MACROS_CKPT, map_location='cpu', weights_only=True)
+        model = MealMacrosNet(macros_manifest, pretrained=False)
+        model.load_state_dict(ck['model'], strict=True)
+        model.to(self.device).eval()
+        self.macros = model
+        self.macros_version = MACROS_VERSION
+        self.macros_sha = _hl.sha256(MACROS_CKPT.read_bytes()).hexdigest()
+        self.macros_status = 'supported'
+        return 'loaded'
 
     def load_external_if_ready(self):
         folder = ROOT/'results/calorieclip_official_v1'
@@ -146,6 +172,33 @@ class ExperimentPipeline:
                 if not torch.isfinite(value).all():
                     raise FloatingPointError('Non-finite external baseline output')
                 result['external_calories'] = float(value.item())
+            # P1-B：主输出切换为五头宏量模型（热量/重量/类别/蛋白/碳水/脂肪），接受热量略于两目标
+            self.load_macros_if_ready()
+            if self.macros is not None:
+                with torch.inference_mode():
+                    mlogits, mvals = self.macros(tensor)
+                if not torch.isfinite(mvals).all() or not torch.isfinite(mlogits).all():
+                    raise FloatingPointError('Non-finite macros model output')
+                result['calories'] = float(mvals[0, 0])
+                result['weight'] = float(mvals[0, 1])
+                result['protein_g'] = float(mvals[0, 2])
+                result['carbohydrate_g'] = float(mvals[0, 3])
+                result['fat_g'] = float(mvals[0, 4])
+                result['macros_status'] = 'supported'
+                mprob = mlogits.float().softmax(1)[0]
+                mindex = int(mprob.argmax())
+                result['category_idx'] = mindex
+                result['category_name'] = CATEGORY_ZH[self.categories[mindex]]
+                result['category_prob'] = float(mprob[mindex])
+                mtop = torch.argsort(mprob, descending=True)[:5].tolist()
+                result['category_probs'] = [
+                    {'idx': i, 'id': self.categories[i], 'name': CATEGORY_ZH[self.categories[i]],
+                     'prob': round(float(mprob[i]), 3), 'pct': round(float(mprob[i]) * 100, 1)}
+                    for i in mtop
+                ]
+                result['source_model'] = self.macros_version
+                result['source_model_sha256'] = self.macros_sha
+                result['target_names'] = ['calories', 'mass', 'protein', 'carbohydrate', 'fat']
             return result
 
 

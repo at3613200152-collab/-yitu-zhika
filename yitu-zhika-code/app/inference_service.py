@@ -180,14 +180,18 @@ def model_info():
     try:
         pipe = get_pipeline()
         manifest = pipe.manifest
+        pipe.load_macros_if_ready()
+        primary = pipe.macros_version if pipe.macros is not None else pipe.nir_version
+        primary_sha = pipe.macros_sha if pipe.macros is not None else pipe.nir_sha
         return jsonify({
             "status": "ok",
-            # P0-A：返回实际加载对象与能力，不写死未使用模型；主结果来源为 nir
-            "primary_model": pipe.nir_version,
-            "primary_model_sha256": pipe.nir_sha,
+            # P0-A/P1-B：返回实际加载对象与能力；主结果产地为宏量模型(若已加载)或 NIR
+            "primary_model": primary,
+            "primary_model_sha256": primary_sha,
             "models": {
                 "rgb": {"version": pipe.rgb_version, "sha256": pipe.rgb_sha, "role": "internal_control"},
-                "nir": {"version": pipe.nir_version, "sha256": pipe.nir_sha, "role": "primary"},
+                "nir": {"version": pipe.nir_version, "sha256": pipe.nir_sha, "role": "reference_nir"},
+                "macros": {"version": pipe.macros_version, "sha256": pipe.macros_sha, "role": "primary_macros"} if pipe.macros is not None else None,
                 "external": {"version": "calorieclip_official_v1", "role": "baseline"},
             },
             "categories": manifest.get("category_to_idx", {}),
