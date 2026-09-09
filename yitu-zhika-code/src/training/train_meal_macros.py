@@ -115,9 +115,11 @@ def main():
     ap.add_argument('--limit', type=int, default=0, help='每 epoch 批次上限(冒烟)')
     ap.add_argument('--smoke', action='store_true')
     ap.add_argument('--init-from', default=None, help='官方 2 目标权重, 用于迁移特征层')
+    ap.add_argument('--manifest', default=str(MANIFEST), help='五目标 manifest(默认 meal_macros_v1; P1-C 用 meal_macros_expanded_v1)')
     args = ap.parse_args()
 
-    manifest = json.loads(MANIFEST.read_text(encoding='utf-8'))
+    manifest = json.loads(Path(args.manifest).read_text(encoding='utf-8'))
+    manifest_path = Path(args.manifest)
     WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     out = RESULT_DIR / args.tag
@@ -194,7 +196,7 @@ def main():
             w.writerow([d] + detail['truths'][i].tolist() + detail['predictions'][i].tolist())
     atomic_json(out / 'test_metrics.json', {'best_epoch': best_epoch,
                                             'checkpoint_sha256': file_digest(best_path),
-                                            'metrics': test_metrics, 'manifest_sha256': file_digest(MANIFEST)})
+                                            'metrics': test_metrics, 'manifest_sha256': file_digest(manifest_path)})
     report(stage='complete', tag=args.tag, best_epoch=best_epoch, test=test_metrics)
 
 
