@@ -20,6 +20,8 @@
 .prob-fill { height: 100%; border-radius: 999rpx; background: #1f7a4d; }
 .prob-pct { width: 80rpx; text-align: right; font-size: 24rpx; color: #1f7a4d; font-weight: 600; }
 .prob-note { font-size: 22rpx; color: #9aa0a6; margin-top: 8rpx; line-height: 1.5; }
+.prob-head { font-size: 24rpx; color: #4a4e52; margin-bottom: 8rpx; }
+.hl { color: #e8833a; font-weight: 600; }
 
 .prompt { font-size: 24rpx; color: #6b7280; margin: 20rpx 0 8rpx; padding: 16rpx 20rpx; background: #faf4ec; border-radius: 12rpx; }
 

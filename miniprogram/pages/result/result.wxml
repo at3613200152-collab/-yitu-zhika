@@ -17,12 +17,13 @@
 
     <!-- 多类别置信度（不作为"准确率"） -->
     <view class="probs" wx:if="{{record.result.category_probs && record.result.category_probs.length > 1}}">
-      <view class="prob" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx">
+      <view class="prob-head">模型最可能的大类（单标签，非各食材占比）</view>
+      <view class="prob" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx" wx:if="{{c.pct >= 1}}">
         <text class="prob-name">{{c.name}}</text>
         <view class="prob-track"><view class="prob-fill" style="width: {{c.pct}}%;"></view></view>
         <text class="prob-pct">{{c.pct}}%</text>
       </view>
-      <view class="prob-note">这是一类食物的置信度分布，不是逐项识别，也不能当作识别成功率。</view>
+      <view class="prob-note">模型是单标签分类，会把最高置信度的大类压到接近 100%、其它接近 0%——<text class="hl">不代表这餐只有蔬菜</text>；这餐可能同时含蛋类/谷物等，本栏无法判断各食材占比。</view>
     </view>
 
     <view class="prompt">照片通常难以判断实际份量和用油量，你可以补充信息。</view>
