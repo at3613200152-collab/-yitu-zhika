@@ -1,0 +1,14 @@
+[Unit]
+Description=yitu-zhika inference service
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/yitu-zhika
+EnvironmentFile=/opt/yitu-zhika/.env
+ExecStart=/opt/yitu-zhika/venv/bin/gunicorn -c /opt/yitu-zhika/deploy/gunicorn.conf.py app.inference_service:app
+Restart=always
+RestartSec=3
+User=www-data
+
+[Install]
+WantedBy=multi-user.target
