@@ -72,11 +72,12 @@ class JointNirMealNet(NirMealNet):
         return MealNet.forward(self, x)
 
 
-def build_model(manifest, mode, generator_state, joint):
+def build_model(manifest, mode, generator_state, joint, pretrained=True):
+    # 论文口径：ResNet50 用 ImageNet 预训练骨干（与官方 meal 训练一致）
     if mode == "rgb":
-        return MealNet(manifest, pretrained=False)
-    model = JointNirMealNet(manifest, generator_state, pretrained=False) if joint else \
-        NirMealNet(manifest, generator_state, pretrained=False)
+        return MealNet(manifest, pretrained=pretrained)
+    JointOrFrozen = JointNirMealNet if joint else NirMealNet
+    model = JointOrFrozen(manifest, generator_state, pretrained=pretrained)
     if joint:
         model.joint_allowed = True
         model.generator.requires_grad_(True)
