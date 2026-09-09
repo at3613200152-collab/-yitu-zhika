@@ -182,12 +182,18 @@ def model_info():
         manifest = pipe.manifest
         return jsonify({
             "status": "ok",
+            # P0-A：返回实际加载对象与能力，不写死未使用模型；主结果来源为 nir
+            "primary_model": pipe.nir_version,
+            "primary_model_sha256": pipe.nir_sha,
             "models": {
-                "rgb": "meal_rgb_official_v1",
-                "nir": "meal_nir_official_v1",
-                "external": "calorieclip_official_v1",
+                "rgb": {"version": pipe.rgb_version, "sha256": pipe.rgb_sha, "role": "internal_control"},
+                "nir": {"version": pipe.nir_version, "sha256": pipe.nir_sha, "role": "primary"},
+                "external": {"version": "calorieclip_official_v1", "role": "baseline"},
             },
             "categories": manifest.get("category_to_idx", {}),
+            "target_names": pipe.target_names,
+            "macros": {"status": pipe.macros_status, "unit": pipe.macros_unit,
+                       "fields": ["protein_g", "carbohydrate_g", "fat_g"]},
             "precision": "FP32",
             "device": str(pipe.device),
         })
@@ -274,7 +280,7 @@ def predict():
                 "top1_name": ff_info["top1_name"],
                 "top1_prob": ff_info["top1_prob"],
                 "food_score": ff_info["food_score"],
-                "model_version": ONLINE_MODEL_VERSION,
+                "model_version": "food_filter_imagenet_resnet50",
             })
         logger.info(
             f"food filter pass from {request.remote_addr}: "
@@ -310,7 +316,7 @@ def predict():
                 "filter": "confidence_threshold",
                 "category_prob": round(float(prob), 3),
                 "confidence_threshold": CONFIDENCE_THRESHOLD,
-                "model_version": ONLINE_MODEL_VERSION,
+                "model_version": "food_filter_imagenet_resnet50",
             })
 
         # 过滤不可 JSON 序列化的字段
@@ -321,13 +327,23 @@ def predict():
         # 多类别置信度分布（前端"食物种类"提示）
         safe["category_probs"] = result.get("category_probs", [])
         safe["status"] = "ok"
-        safe["model_version"] = ONLINE_MODEL_VERSION
-        safe["model_sha256_prefix"] = ONLINE_MODEL_SHA256[:16]
+        # P0-A：主结果来源模型绑定（主结果来自 NIR；RGB 仅对照），避免溯源错标
+        safe["model_version"] = result.get("source_model", ONLINE_MODEL_VERSION)
+        safe["model_sha256_prefix"] = (result.get("source_model_sha256") or ONLINE_MODEL_SHA256)[:16]
+        safe["rgb_model_version"] = result.get("rgb_model", ONLINE_MODEL_VERSION)
+        safe["rgb_model_sha256_prefix"] = (result.get("rgb_model_sha256") or ONLINE_MODEL_SHA256)[:16]
+        safe["target_names"] = result.get("target_names", ["calories", "mass"])
+        safe["category_prob_note"] = result.get("category_prob_note", "模型置信度，非识别准确率")
+        # P0-A：三大营养素——两目标模型不输出，值为 None + 状态，不伪造
+        safe["macros_status"] = result.get("macros_status", "unsupported")
+        safe["macros_unit"] = result.get("macros_unit", "g")
 
-        # 数值四舍五入到合理精度（避免 233.3663330078125 这种假精度）
-        for k in ("calories", "weight", "category_prob"):
-            if k in safe and isinstance(safe[k], float):
+        # 数值四舍五入：卡路里/重量保留 1 位小数；模型分数保留 3 位（避免 0.989→1.0 误读为 100%）
+        for k in ("calories", "weight"):
+            if isinstance(safe.get(k), float):
                 safe[k] = round(safe[k], 1)
+        if isinstance(safe.get("category_prob"), float):
+            safe["category_prob"] = round(safe["category_prob"], 3)
 
         logger.info(f"predict ok from {request.remote_addr}: "
                     f"cat={safe.get('category_name')}, "

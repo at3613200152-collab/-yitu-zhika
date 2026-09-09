@@ -49,6 +49,16 @@ class ExperimentPipeline:
             raise ValueError('Frozen meal manifest changed')
         self.manifest = read(MANIFEST)
         self.categories = {v: k for k, v in self.manifest['category_to_idx'].items()}
+        # 模型来源绑定：主结果（分类 + 卡路里/重量）由 NIR 模型产出，RGB 仅作对照。
+        # 详见 P0-A：主结果版本模型必须与产出模型一致，避免溯源错标。
+        self.target_names = ['calories', 'mass']
+        self.macros_status = 'unsupported'   # 两目标模型不输出蛋白/碳水/脂肪
+        self.macros_unit = 'g'
+        self.rgb_version = 'meal_rgb_official_v1'
+        self.nir_version = 'meal_nir_official_v1'
+        import hashlib as _hl
+        self.rgb_sha = _hl.sha256((ROOT / 'checkpoints/meal_rgb_official_v1/best.pt').read_bytes()).hexdigest()
+        self.nir_sha = _hl.sha256((ROOT / 'checkpoints/meal_nir_official_v1/best.pt').read_bytes()).hexdigest()
         rgb = audited_checkpoint('meal_rgb_official_v1', 'paired_completion_audit')
         self.rgb = MealNet(self.manifest, pretrained=False)
         self.rgb.load_state_dict(rgb['model'], strict=True)
@@ -119,6 +129,16 @@ class ExperimentPipeline:
                 'category_prob': float(probabilities[index]),
                 'category_probs': category_probs,
                 'classification_valid': True,
+                # P0-A：主结果来源模型绑定（主结果来自 NIR；RGB 仅为对照）
+                'source_model': self.nir_version,
+                'source_model_sha256': self.nir_sha,
+                'rgb_model': self.rgb_version,
+                'rgb_model_sha256': self.rgb_sha,
+                'target_names': self.target_names,
+                # P0-A：三大营养素——当前两目标模型不输出，值为 None + 状态，绝不伪造
+                'protein_g': None, 'carbohydrate_g': None, 'fat_g': None,
+                'macros_status': self.macros_status, 'macros_unit': self.macros_unit,
+                'category_prob_note': '模型置信度，非识别准确率',
                 'external_calories': None, 'external_status': external_status,
                 'inference_precision': 'FP32', 'device': str(self.device)}
             if self.external is not None:

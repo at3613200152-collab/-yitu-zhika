@@ -47,11 +47,26 @@ class PredictionContract:
     external_calories_kcal: float | None = None
     external_status: str | None = None  # 外部基线状态描述
 
+    # 溯源（P0-A）：主结果来源模型与 SHA，避免"版本=RGB 但数值来自 NIR"错标
+    source_model_version: str | None = None
+    source_model_sha256_prefix: str | None = None
+    rgb_model_version: str | None = None
+    target_names: list | None = None
+
+    # 三大营养素（P0-A）：当前两目标模型不输出；值为 None + 状态，绝不伪造
+    protein_g: float | None = None
+    carbohydrate_g: float | None = None
+    fat_g: float | None = None
+    macros_status: str = "unsupported"    # supported / partial / unsupported
+    macros_unit: str = "g"
+    macros_source: str = "model_not_supported"
+    category_prob_note: str = "模型置信度，非识别准确率"
+
     # NIR 图（不序列化，仅 Demo 用）
     nir_image_b64: str | None = None
 
     @classmethod
-    def from_pipeline_result(cls, result: dict, model_version: str) -> "PredictionContract":
+    def from_pipeline_result(cls, result: dict, model_version: str, model_sha_prefix: str | None = None) -> "PredictionContract":
         """从 ExperimentPipeline.predict() 结果构造契约对象。"""
         return cls(
             calories_kcal=float(result["calories"]),
@@ -59,6 +74,14 @@ class PredictionContract:
             category_name=result["category_name"],
             category_prob=float(result["category_prob"]),
             model_version=model_version,
+            source_model_version=result.get("source_model", model_version),
+            source_model_sha256_prefix=model_sha_prefix or (result.get("source_model_sha256") or "")[:16],
+            rgb_model_version=result.get("rgb_model"),
+            target_names=result.get("target_names", ["calories", "mass"]),
+            macros_status=result.get("macros_status", "unsupported"),
+            macros_unit=result.get("macros_unit", "g"),
+            macros_source=result.get("macros_source", "model_not_supported"),
+            category_prob_note=result.get("category_prob_note", "模型置信度，非识别准确率"),
             inference_precision=result.get("inference_precision", "FP32"),
             device=result.get("device", "cpu"),
             status=InferenceStatus.OK.value,
@@ -69,13 +92,26 @@ class PredictionContract:
         )
 
     def to_dict(self) -> dict:
-        """转 JSON 友好的 dict，去掉 None 字段。"""
+        """转 JSON 友好的 dict，去掉 None 的对照字段；宏量营养保留（可为 None + 状态）。"""
         d = {
             "calories_kcal": round(self.calories_kcal, 1),
             "weight_g": round(self.weight_g, 1),
             "category_name": self.category_name,
-            "category_prob": round(self.category_prob, 4),
+            "category_prob": round(self.category_prob, 3),
+            "category_prob_note": self.category_prob_note,
             "model_version": self.model_version,
+            "source_model_version": self.source_model_version,
+            "source_model_sha256_prefix": self.source_model_sha256_prefix,
+            "rgb_model_version": self.rgb_model_version,
+            "target_names": self.target_names,
+            "macros": {
+                "status": self.macros_status,
+                "unit": self.macros_unit,
+                "source": self.macros_source,
+                "protein_g": self.protein_g,
+                "carbohydrate_g": self.carbohydrate_g,
+                "fat_g": self.fat_g,
+            },
             "inference_precision": self.inference_precision,
             "device": self.device,
             "status": self.status,
