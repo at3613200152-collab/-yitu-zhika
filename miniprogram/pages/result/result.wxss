@@ -29,6 +29,7 @@
 .macros { margin-top: 8rpx; padding: 14rpx 18rpx; background: #f6f4f1; border-radius: 12rpx; }
 .macros-label { font-size: 24rpx; color: #6b7280; }
 .macros-value { font-size: 26rpx; color: #9aa0a6; margin-top: 6rpx; }
+.macros-value.warn { color: #e8833a; }
 .macro-item { font-size: 26rpx; color: #4a4e52; margin-top: 6rpx; }
 
 .btn-primary { display: flex; align-items: center; justify-content: center; height: 92rpx; border-radius: 999rpx; background: #1f7a4d; color: #fff; font-size: 30rpx; font-weight: 600; box-shadow: 0 10rpx 20rpx rgba(31,122,77,.2); margin-top: 20rpx; }

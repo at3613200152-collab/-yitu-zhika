@@ -22,9 +22,11 @@
     </view>
     <view class="macros" wx:elif="{{record.result.protein_g !== undefined && record.result.protein_g !== null}}">
       <view class="macros-label">宏量营养（估算）</view>
-      <view class="macro-item">蛋白质 {{record.result.protein_g}} g</view>
-      <view class="macro-item">碳水 {{record.result.carbohydrate_g}} g</view>
-      <view class="macro-item">脂肪 {{record.result.fat_g}} g</view>
+      <view class="macro-item">蛋白质 {{abnormalProtein ? '异常/待确认' : record.result.protein_g + ' g'}}</view>
+      <view class="macro-item">碳水 {{abnormalCarb ? '异常/待确认' : record.result.carbohydrate_g + ' g'}}</view>
+      <view class="macro-item">脂肪 {{abnormalFat ? '异常/待确认' : record.result.fat_g + ' g'}}</view>
+      <view class="macro-item" wx:if="{{abnormalKcal}}">热量（异常/待确认）</view>
+      <view class="macros-value warn" wx:if="{{valuesNote}}">{{valuesNote}}</view>
     </view>
 
     <!-- 多类别置信度（不作为"准确率"） -->

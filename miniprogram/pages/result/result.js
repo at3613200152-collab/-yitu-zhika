@@ -66,7 +66,13 @@ Page({
       editCategory: categoryIndex >= 0 ? CATEGORY_ZH[CATEGORY_IDS[categoryIndex]] : (record.result.category_name || ''),
       categoryIndex,
       confirmed: !!record.feedbackSubmitted,
-      consent: !!wx.getStorageSync('training_consent')   // 尊重用户在"我的"里的全局授权设置
+      consent: !!wx.getStorageSync('training_consent'),   // 尊重用户在"我的"里的全局授权设置
+      // 负值/异常字段（不作为正常营养值展示，显示"待确认/异常"）
+      abnormalProtein: (record.result.abnormal_fields || []).includes('protein_g'),
+      abnormalCarb: (record.result.abnormal_fields || []).includes('carbohydrate_g'),
+      abnormalFat: (record.result.abnormal_fields || []).includes('fat_g'),
+      abnormalKcal: (record.result.abnormal_fields || []).includes('calories'),
+      valuesNote: record.result.values_note || ''
     })
   },
 

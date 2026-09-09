@@ -349,6 +349,16 @@ def predict():
         if isinstance(safe.get("category_prob"), float):
             safe["category_prob"] = round(safe["category_prob"], 3)
 
+        # 异常/负值标记（方案 §3.5：负值不作为正常营养值展示；不裁零美化，保留原值供审计）
+        abnormal_fields = []
+        for k in ("calories", "weight", "protein_g", "carbohydrate_g", "fat_g"):
+            v = safe.get(k)
+            if isinstance(v, (int, float)) and v < 0:
+                abnormal_fields.append(k)
+        if abnormal_fields:
+            safe["abnormal_fields"] = abnormal_fields
+            safe["values_note"] = "部分估算为负值/异常，仅供记录参考；请以实测或人工确认为准，不作正常摄入。"
+
         logger.info(f"predict ok from {request.remote_addr}: "
                     f"cat={safe.get('category_name')}, "
                     f"kcal={safe.get('calories')}, "
