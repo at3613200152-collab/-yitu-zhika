@@ -16,8 +16,8 @@ from src.models.meal_macros_net import MealMacrosNet
 ROOT = Path(__file__).resolve().parents[1]
 # 五头宏量模型（P1-B）：接入在线 predict 后，主输出(热量/重量/类别/宏量)来自此模型
 MACROS_VERSION = 'meal_macros_v1'
-MACROS_CKPT = ROOT / 'checkpoints/meal_macros_v1/v1/best.pt'
-MACROS_MANIFEST = ROOT / 'results/meal_macros_v1/manifest.json'
+MACROS_CKPT = ROOT / 'checkpoints/meal_macros_v1/v1_expanded/best.pt'   # P1-C: 更优的扩展(3390)版
+MACROS_MANIFEST = ROOT / 'results/meal_macros_expanded_v1/manifest.json'
 CATEGORY_ZH = {'dairy': '乳制品', 'dessert': '甜点', 'egg': '蛋类', 'grain': '谷物主食',
     'meat': '肉类', 'mixed': '混合餐食', 'other': '其他', 'sauce_condiment': '酱料调味品',
     'seafood': '水产', 'soup_stew': '汤炖菜', 'vegetable': '蔬菜'}
