@@ -80,7 +80,7 @@ def epoch_pass(model, manifest, split, epoch, args, optimizer=None):
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
                 optimizer.step()
-        size = len(ids) if ids else len(dish_ids)
+        size = len(dish_ids)
         n += size
         total += loss.item() * size
         reg_total += reg.item() * size
