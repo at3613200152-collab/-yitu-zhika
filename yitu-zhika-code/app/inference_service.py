@@ -50,6 +50,10 @@ API_KEY = os.environ.get("INFERENCE_API_KEY", "dev-key-change-in-prod")
 MERCHANT_API_KEY = os.environ.get("MERCHANT_API_KEY", "dev-merchant-key")
 ADMIN_API_KEY = os.environ.get("ADMIN_API_KEY", "dev-admin-key")
 
+# 微信登录（AppSecret 仅后端持有，见 app/auth.py）
+WX_APPID = os.environ.get("WX_APPID", "wxcd827286e262c0ce")
+WX_SECRET = os.environ.get("WX_SECRET", "")
+
 # P0: 上线模型固定（见 docs/model_card.md）
 # 不依赖测试集成绩挑模型，按 audit 完整性选定
 ONLINE_MODEL_PATH = ROOT / "checkpoints" / "meal_rgb_official_v1" / "best.pt"
@@ -841,6 +845,29 @@ def public_menus():
     except Exception as e:
         return error_response(f"查询失败：{e}", 500, "MERCHANT_FAILED")
     return jsonify({"status": "ok", "menus": menus})
+
+
+@app.route("/auth/wx-login", methods=["POST"])
+def wx_login():
+    """微信登录：前端传 wx.login 的 code，后端换 openid 并返回去标识化 participant_id。"""
+    if not check_api_key():
+        return error_response("未授权：缺少或错误的 API key", 401, "UNAUTHORIZED")
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+    except Exception:
+        return error_response("无效 JSON", 400, "INVALID_JSON")
+    code = data.get("code")
+    if not code:
+        return error_response("缺少 code", 400, "MISSING_CODE")
+    try:
+        from app import auth
+        pid, verified = auth.wx_login(code, WX_APPID, WX_SECRET)
+    except ValueError as e:
+        return error_response(str(e), 400, "WX_LOGIN_FAILED")
+    except Exception as e:
+        logger.error(f"wx-login error: {e}", exc_info=True)
+        return error_response(f"微信登录失败：{e}", 500, "WX_LOGIN_ERROR")
+    return jsonify({"status": "ok", "participant_id": pid, "wx_verified": verified})
 
 
 def main():
