@@ -93,6 +93,10 @@ def get_pipeline():
     if _pipeline is None:
         with _pipeline_lock:
             if _pipeline is None:
+                if os.environ.get('YITU_RUNTIME') == 'cloud_primary':
+                    from app.cloud_pipeline import CloudPipeline
+                    _pipeline = CloudPipeline(device='cpu')
+                    return _pipeline
                 # P1.1: 上线模型 SHA256 校验
                 if not ONLINE_MODEL_PATH.exists():
                     raise RuntimeError(f"上线模型缺失：{ONLINE_MODEL_PATH}")
@@ -364,7 +368,7 @@ def predict():
         safe["model_version"] = result.get("source_model", ONLINE_MODEL_VERSION)
         safe["model_sha256_prefix"] = (result.get("source_model_sha256") or ONLINE_MODEL_SHA256)[:16]
         safe["rgb_model_version"] = result.get("rgb_model", ONLINE_MODEL_VERSION)
-        safe["rgb_model_sha256_prefix"] = (result.get("rgb_model_sha256") or ONLINE_MODEL_SHA256)[:16]
+        safe["rgb_model_sha256_prefix"] = ((result.get("rgb_model_sha256") or '')[:16] or None)
         safe["target_names"] = result.get("target_names", ["calories", "mass"])
         safe["category_prob_note"] = result.get("category_prob_note", "模型置信度，非识别准确率")
         # P0-A：三大营养素——两目标模型不输出，值为 None + 状态，不伪造

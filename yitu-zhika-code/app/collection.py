@@ -31,6 +31,26 @@ MASS_BASIS = {"raw", "as_served", "unknown"}
 VALID_QUALITY = {"confirm_only", "directional", "manual_typed", "skipped"}
 
 
+def normalise_corrected_categories(payload):
+    """Validate multi-label confirmation while accepting the legacy single label."""
+    raw = payload.get("corrected_categories")
+    if raw is None:
+        legacy = payload.get("corrected_category")
+        raw = [] if legacy in (None, "") else [legacy]
+    if not isinstance(raw, list):
+        raise ValueError("corrected_categories 必须是类别数组")
+    values = []
+    for value in raw:
+        category = str(value).strip()
+        if not category:
+            continue
+        if category not in VALID_CATEGORIES:
+            raise ValueError(f"corrected_categories 中有不是合法类别的值：{category}")
+        if category not in values:
+            values.append(category)
+    return values
+
+
 def _conn():
     c = sqlite3.connect(str(DB), check_same_thread=False, timeout=10.0)
     c.row_factory = sqlite3.Row
@@ -148,29 +168,28 @@ def save_record(payload, client_ip):
         "category_model": payload.get("category_model"),
         "category_label_schema": payload.get("category_label_schema"),
     }
-    # 用户标注的类别必须是白名单内的 id（11 类或 12 类），避免脏值进入训练数据
-    corrected_category = payload.get("corrected_category")
-    if corrected_category is not None:
-        corrected_category = str(corrected_category).strip()
-        if corrected_category == "":
-            corrected_category = None
-        elif corrected_category not in VALID_CATEGORIES:
-            raise ValueError(f"corrected_category 不是合法类别：{corrected_category}")
+    # 用户确认允许多选；兼容旧客户端的 corrected_category。
+    corrected_categories = normalise_corrected_categories(payload)
+    # 旧的单标签训练导出只接受真正的单选；多选记录交给后续 BCE 多标签训练链。
+    corrected_category = corrected_categories[0] if len(corrected_categories) == 1 else None
 
     # 标签值（用户填写的；未提供为 None，绝不填 0）
     label_value = {
         "corrected_calories": payload.get("corrected_calories"),
         "corrected_weight": payload.get("corrected_weight"),
         "corrected_category": corrected_category,
+        "corrected_categories": corrected_categories,
         "measured_weight": payload.get("measured_weight"),
         # 标注所属标签体系：fruit 只可能来自 v2；其余 id 两版共用（客户端可显式带上）
         "label_schema": (payload.get("category_label_schema")
-                         or ('v2_fruit_12class' if corrected_category == 'fruit' else None)),
+                         or ('v2_fruit_12class' if 'fruit' in corrected_categories else None)),
     }
     # 标签来源：有实测重量 → measured；仅有用户填写 → user_estimate；只有确认 → model_only
     if payload.get("measured_weight") is not None:
         label_source = "measured"
-    elif any(v is not None for v in (payload.get("corrected_calories"), payload.get("corrected_weight"), payload.get("corrected_category"))):
+    elif (payload.get("corrected_calories") is not None
+          or payload.get("corrected_weight") is not None
+          or bool(corrected_categories)):
         label_source = "user_estimate"
     else:
         label_source = "model_only"

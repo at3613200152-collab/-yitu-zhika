@@ -81,9 +81,10 @@ class ResNetMultiTask(nn.Module):
             with torch.no_grad():
                 new_conv1.weight[:, :3, :, :] = original_conv1.weight[:, :3, :, :].clone()
                 if input_channels > 3:
+                    # NIR 通道用 RGB 均值初始化 × 0.3（原 0.01 太小，NIR 通道几乎不贡献）
                     new_conv1.weight[:, 3:, :, :] = original_conv1.weight[:, :1, :, :].mean(
                         dim=1, keepdim=True
-                    ).expand(-1, input_channels - 3, -1, -1) * 0.01
+                    ).expand(-1, input_channels - 3, -1, -1) * 0.3
 
         backbone.conv1 = new_conv1
 

@@ -40,7 +40,7 @@ def resolve_macros_manifest(checkpoint):
     cfg = checkpoint.get('config') or {}
     rec = cfg.get('manifest')
     if rec:
-        p = Path(rec)
+        p = Path(str(rec).replace('\\', '/'))
         if not p.is_absolute():
             p = ROOT / rec
         if p.exists():
