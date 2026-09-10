@@ -66,6 +66,11 @@ class PredictionContract:
     label_schema: str | None = None
     category_manifest: str | None = None
 
+    # 决策 C（2026-09-10）：热量/宏量与类别解耦，类别来自独立类别模型（12 类含水果）
+    category_model: str | None = None
+    category_model_sha256_prefix: str | None = None
+    category_label_schema: str | None = None
+
     # NIR 图（不序列化，仅 Demo 用）
     nir_image_b64: str | None = None
 
@@ -88,6 +93,9 @@ class PredictionContract:
             category_prob_note=result.get("category_prob_note", "模型置信度，非识别准确率"),
             label_schema=result.get("label_schema"),
             category_manifest=result.get("category_manifest"),
+            category_model=result.get("category_model"),
+            category_model_sha256_prefix=(result.get("category_model_sha256") or "")[:16] or None,
+            category_label_schema=result.get("category_label_schema"),
             inference_precision=result.get("inference_precision", "FP32"),
             device=result.get("device", "cpu"),
             status=InferenceStatus.OK.value,
@@ -112,6 +120,9 @@ class PredictionContract:
             "target_names": self.target_names,
             "label_schema": self.label_schema,
             "category_manifest": self.category_manifest,
+            "category_model": self.category_model,
+            "category_model_sha256_prefix": self.category_model_sha256_prefix,
+            "category_label_schema": self.category_label_schema,
             "macros": {
                 "status": self.macros_status,
                 "unit": self.macros_unit,

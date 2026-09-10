@@ -73,6 +73,9 @@ def main():
                              'pass': off.get('macros_unit') == on.get('macros_unit')}
     checks['target_names'] = {'offline': off.get('target_names'), 'http': on.get('target_names'),
                               'pass': off.get('target_names') == on.get('target_names')}
+    # 类别来源（决策 C：类别与热量/宏量解耦，需一并核对来源标注）
+    for k in ('category_model', 'category_label_schema', 'category_manifest', 'label_schema'):
+        checks[k] = {'offline': off.get(k), 'http': on.get(k), 'pass': off.get(k) == on.get(k)}
     # 异常字段一致性
     checks['abnormal_fields'] = {'offline': [k for k in ('calories','weight','protein_g','carbohydrate_g','fat_g')
                                              if isinstance(off.get(k),(int,float)) and off[k] < 0],

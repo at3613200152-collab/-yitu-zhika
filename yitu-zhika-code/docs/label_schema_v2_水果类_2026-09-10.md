@@ -141,13 +141,29 @@ val 567 / test 507 均不变；test 上有真值支持的类别数为 10（12 �
    标记为"待确认"，不裁零（见 `app/inference_service.py`）。
 5. 分类指标**不可跨 schema 比较**：12 类的 acc 0.686 与 11 类的 0.7357 分母/定义不同（见 §5）。
 
-### 6.2 由此产生的决策点（待项目负责人确认）
-| 选项 | 内容 | 代价 |
+### 6.2 决策（2026-09-10 已定：选项 C 双模型解耦）
+项目负责人选定 **选项 C**，并已实现：
+
+| 输出 | 来源模型 | 说明 |
 |---|---|---|
-| A | 在线主模型保持 `v1_expanded`（11 类）；12 类模型只作为"标签纠偏"证据进报告 | 小程序类别仍无"水果" |
-| B | 切换在线主模型到 12 类（取热量最低的 `v3_corrected_seed42`，60.16） | 热量 MAE +1.66（+2.8%）；类别语义正确 |
-| C | 双模型解耦：热量/宏量用 `v1_expanded`，类别用 12 类模型，接口分别标注来源 | 每次预测两次前向（CPU 约 +1s）；需在小程序/文档说明类别来自另一模型 |
-| D | 用更低 CE 权重（如 0.1）重训 12 类作为新实验臂 | 再花 ~1.5h GPU；属新实验，需预注册并如实报告 |
+| 热量 / 重量 / 蛋白 / 碳水 / 脂肪 | `meal_macros_v1`（`v1_expanded`） | 热量 MAE 58.50，保持最优回归 |
+| 粗类别 | `meal_macros_category_v2`（`v3_corrected_seed42`） | label_schema v2，12 类含水果 |
+
+实现要点：
+- `app/experiment_pipeline.py`：`CATEGORY_VERSION/CATEGORY_CKPT` 与 `MACROS_*` 解耦；
+  `load_category_if_ready()` 按权重自带 manifest 解析类别映射；预测时两次前向，分别取回归与类别。
+- 溯源字段：`source_model`(回归) 与 `category_model` / `category_model_sha256` / `category_label_schema` /
+  `category_manifest`(类别) 分别返回；`/model-info` 的 `models.macros.role=primary_regression_macros`、
+  `models.category.role=primary_category`，并给出 `decoupling_note`。
+- 回退：若 12 类权重缺失，类别自动回退为五头权重自带的类别头（同一接口，无字段缺失）。
+- 小程序：`result.js` / `nutritionist.js` 的 `CATEGORY_IDS`/`CATEGORY_ZH` 增加 `fruit`；
+  **历史记录兼容**：类别解析优先按中文名，其次按 `category_label_schema` 选择 11 类或 12 类顺序解释
+  `category_idx`（否则旧记录的"谷物"会被错读成"水果"）；结果页新增解耦说明。
+- 验证：`/model-info` 类别 12 项含 fruit；`scripts/check_inference_consistency.py`
+  离线与 HTTP 逐字段一致（含 `category_model`/`category_label_schema`/`category_manifest`），`all_pass: true`。
+
+其它选项（未采用）：A 保持 11 类在线（小程序看不到水果）；B 直接切 12 类（热量 +1.66）；
+D 降 CE 权重重训（未做，列为后续实验）。
 
 ## 7. 边界
 - 本 schema 仍是**关键词+质量阈值推导**，**不是官方食物类别**；不得对外宣称与官方类别对齐。

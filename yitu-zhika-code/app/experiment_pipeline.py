@@ -18,6 +18,12 @@ ROOT = Path(__file__).resolve().parents[1]
 MACROS_VERSION = 'meal_macros_v1'
 MACROS_CKPT = ROOT / 'checkpoints/meal_macros_v1/v1_expanded/best.pt'   # P1-C: 更优的扩展(3390)版
 MACROS_MANIFEST = ROOT / 'results/meal_macros_expanded_v1/manifest.json'
+# 类别模型（label_schema v2，12 类含水果）：与回归/宏量解耦，仅提供类别。
+# 依据：12 类体系让水果类可预测（F1 0.837），但同配方下热量 MAE 可复现上升 ~1.9 kcal
+# （58.31±0.70 → 60.26±0.11，区间不重叠）→ 热量/宏量仍用 v1_expanded，类别用 12 类模型。
+# 详见 docs/label_schema_v2_水果类_2026-09-10.md §6。
+CATEGORY_VERSION = 'meal_macros_category_v2'
+CATEGORY_CKPT = ROOT / 'checkpoints/meal_macros_v1/v3_corrected_seed42/best.pt'
 CATEGORY_ZH = {'dairy': '乳制品', 'dessert': '甜点', 'egg': '蛋类', 'fruit': '水果',
     'grain': '谷物主食', 'meat': '肉类', 'mixed': '混合餐食', 'other': '其他',
     'sauce_condiment': '酱料调味品', 'seafood': '水产', 'soup_stew': '汤炖菜',
@@ -109,6 +115,33 @@ class ExperimentPipeline:
         self.macros = None
         self.macros_version = None
         self.macros_sha = None
+        self.category_model = None
+        self.category_version = None
+        self.category_sha = None
+        self.category_label_schema = None
+
+    def load_category_if_ready(self):
+        """加载 12 类类别模型（label_schema v2）。仅用于类别输出，不参与热量/宏量。"""
+        if self.category_model is not None:
+            return 'loaded'
+        if not CATEGORY_CKPT.exists():
+            return 'not_available'
+        import hashlib as _hl
+        ck = torch.load(CATEGORY_CKPT, map_location='cpu', weights_only=True)
+        manifest, shown, source = resolve_macros_manifest(ck)
+        model = MealMacrosNet(manifest, pretrained=False)
+        model.load_state_dict(ck['model'], strict=True)
+        model.to(self.device).eval()
+        if len(manifest['category_to_idx']) < 2:
+            raise ValueError('类别模型 manifest 异常')
+        self.category_model = model
+        self.category_version = CATEGORY_VERSION
+        self.category_sha = _hl.sha256(CATEGORY_CKPT.read_bytes()).hexdigest()
+        self.category_manifest_path = shown
+        self.category_manifest_source = source
+        self.category_label_schema = manifest.get('label_schema_version', 'unknown')
+        self.category_names = {v: k for k, v in manifest['category_to_idx'].items()}
+        return 'loaded'
 
     def load_macros_if_ready(self):
         """P1-B：加载五头宏量模型（若 checkpoint 存在），主输出切换到宏量模型。"""
@@ -207,8 +240,9 @@ class ExperimentPipeline:
                 if not torch.isfinite(value).all():
                     raise FloatingPointError('Non-finite external baseline output')
                 result['external_calories'] = float(value.item())
-            # P1-B：主输出切换为五头宏量模型（热量/重量/类别/蛋白/碳水/脂肪），接受热量略于两目标
+            # P1-B：主输出切换为五头宏量模型（热量/重量/蛋白/碳水/脂肪）
             self.load_macros_if_ready()
+            self.load_category_if_ready()
             if self.macros is not None:
                 with torch.inference_mode():
                     mlogits, mvals = self.macros(tensor)
@@ -220,24 +254,42 @@ class ExperimentPipeline:
                 result['carbohydrate_g'] = float(mvals[0, 3])
                 result['fat_g'] = float(mvals[0, 4])
                 result['macros_status'] = 'supported'
-                mprob = mlogits.float().softmax(1)[0]
-                mindex = int(mprob.argmax())
-                # 类别名称用**五头权重自己的** manifest 映射（label_schema v2 为 12 类，含 fruit）
-                mcat = self.macros_categories
-                result['category_idx'] = mindex
-                result['category_name'] = CATEGORY_ZH.get(mcat[mindex], mcat[mindex])
-                result['category_prob'] = float(mprob[mindex])
-                mtop = torch.argsort(mprob, descending=True)[:5].tolist()
-                result['category_probs'] = [
-                    {'idx': i, 'id': mcat[i], 'name': CATEGORY_ZH.get(mcat[i], mcat[i]),
-                     'prob': round(float(mprob[i]), 3), 'pct': round(float(mprob[i]) * 100, 1)}
-                    for i in mtop
-                ]
-                result['label_schema'] = self.macros_label_schema
-                result['category_manifest'] = self.macros_manifest_path
                 result['source_model'] = self.macros_version
                 result['source_model_sha256'] = self.macros_sha
                 result['target_names'] = ['calories', 'mass', 'protein', 'carbohydrate', 'fat']
+                # 类别来源与回归来源解耦（2026-09-10 决策 C）：
+                # 类别优先用 label_schema v2 的 12 类模型（含水果），热量/宏量仍来自 v1_expanded。
+                if self.category_model is not None:
+                    with torch.inference_mode():
+                        clogits, _ = self.category_model(tensor)
+                    if not torch.isfinite(clogits).all():
+                        raise FloatingPointError('Non-finite category model output')
+                    prob = clogits.float().softmax(1)[0]
+                    index = int(prob.argmax())
+                    names = self.category_names
+                    result['category_model'] = CATEGORY_VERSION
+                    result['category_model_sha256'] = self.category_sha
+                    result['category_label_schema'] = self.category_label_schema
+                    result['category_manifest'] = self.category_manifest_path
+                else:
+                    # 回退：没有 12 类权重时，类别沿用五头权重自带的类别头
+                    prob = mlogits.float().softmax(1)[0]
+                    index = int(prob.argmax())
+                    names = self.macros_categories
+                    result['category_model'] = self.macros_version
+                    result['category_model_sha256'] = self.macros_sha
+                    result['category_label_schema'] = self.macros_label_schema
+                    result['category_manifest'] = self.macros_manifest_path
+                result['category_idx'] = index
+                result['category_name'] = CATEGORY_ZH.get(names[index], names[index])
+                result['category_prob'] = float(prob[index])
+                top = torch.argsort(prob, descending=True)[:5].tolist()
+                result['category_probs'] = [
+                    {'idx': i, 'id': names[i], 'name': CATEGORY_ZH.get(names[i], names[i]),
+                     'prob': round(float(prob[i]), 3), 'pct': round(float(prob[i]) * 100, 1)}
+                    for i in top
+                ]
+                result['label_schema'] = result['category_label_schema']
             return result
 
 

@@ -181,33 +181,49 @@ def model_info():
         pipe = get_pipeline()
         manifest = pipe.manifest
         pipe.load_macros_if_ready()
+        category_status = pipe.load_category_if_ready()
         primary = pipe.macros_version if pipe.macros is not None else pipe.nir_version
         primary_sha = pipe.macros_sha if pipe.macros is not None else pipe.nir_sha
-        # 类别映射随主结果模型走：五头模型加载后按它自己的 manifest（label_schema v2 为 12 类）
-        if pipe.macros is not None:
+        # 类别映射随**类别**来源模型走（决策 C：热量/宏量与类别解耦）
+        if pipe.category_model is not None:
+            primary_categories = {name: idx for idx, name in pipe.category_names.items()}
+            primary_label_schema = pipe.category_label_schema
+            primary_category_manifest = pipe.category_manifest_path
+            category_model_block = {"version": pipe.category_version, "sha256": pipe.category_sha,
+                                    "role": "primary_category",
+                                    "label_schema": pipe.category_label_schema,
+                                    "category_manifest": pipe.category_manifest_path}
+        elif pipe.macros is not None:
             primary_categories = {name: idx for idx, name in pipe.macros_categories.items()}
             primary_label_schema = pipe.macros_label_schema
             primary_category_manifest = pipe.macros_manifest_path
+            category_model_block = None
         else:
             primary_categories = manifest.get("category_to_idx", {})
             primary_label_schema = manifest.get("label_schema_version", "v1_11class")
-            primary_category_manifest = None   # 两目标对照模型使用冻结 manifest（其类别映射即 manifest 本身）
+            primary_category_manifest = None
+            category_model_block = None
         return jsonify({
             "status": "ok",
-            # P0-A/P1-B：返回实际加载对象与能力；主结果产地为宏量模型(若已加载)或 NIR
+            # P0-A/P1-B：返回实际加载对象与能力；热量/宏量产地为五头模型，类别产地为 12 类模型
             "primary_model": primary,
             "primary_model_sha256": primary_sha,
             "models": {
                 "rgb": {"version": pipe.rgb_version, "sha256": pipe.rgb_sha, "role": "internal_control"},
                 "nir": {"version": pipe.nir_version, "sha256": pipe.nir_sha, "role": "reference_nir"},
-                "macros": {"version": pipe.macros_version, "sha256": pipe.macros_sha, "role": "primary_macros",
+                "macros": {"version": pipe.macros_version, "sha256": pipe.macros_sha,
+                           "role": "primary_regression_macros",
                            "label_schema": pipe.macros_label_schema,
                            "category_manifest": pipe.macros_manifest_path} if pipe.macros is not None else None,
+                "category": category_model_block,
                 "external": {"version": "calorieclip_official_v1", "role": "baseline"},
             },
             "categories": primary_categories,
             "label_schema": primary_label_schema,
             "category_manifest": primary_category_manifest,
+            "category_status": category_status,
+            "decoupling_note": "热量/重量/宏量来自 macros 模型；类别来自 category 模型（label_schema 不同，"
+                               "12 类含水果）。两者共用同一张 RGB 输入，但为独立权重。",
             "target_names": pipe.target_names,
             "macros": {"status": pipe.macros_status, "unit": pipe.macros_unit,
                        "fields": ["protein_g", "carbohydrate_g", "fat_g"]},
