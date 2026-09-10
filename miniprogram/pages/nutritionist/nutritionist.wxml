@@ -9,7 +9,7 @@
     <view class="form-row"><text class="form-label">体重(kg)</text><input class="form-input" type="digit" value="{{weight}}" bindinput="onInput" data-key="weight" /></view>
     <view class="form-row"><text class="form-label">年龄</text><input class="form-input" type="digit" value="{{age}}" bindinput="onInput" data-key="age" /></view>
 
-    <view class="form-row">
+    <view class="form-row choice-row">
       <text class="form-label">性别</text>
       <view class="option-row">
         <button class="opt {{gender === 'male' ? 'opt-active' : ''}}" bindtap="onGenderSelect" data-v="male">男</button>
@@ -17,30 +17,30 @@
       </view>
     </view>
 
-    <view class="form-row">
+    <view class="form-row choice-row">
       <text class="form-label">目标</text>
       <view class="option-row">
-        <button class="opt {{goal === 'lose' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="lose">减</button>
+        <button class="opt {{goal === 'lose' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="lose">减重</button>
         <button class="opt {{goal === 'maintain' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="maintain">维持</button>
-        <button class="opt {{goal === 'gain' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="gain">增</button>
+        <button class="opt {{goal === 'gain' ? 'opt-active' : ''}}" bindtap="onGoalSelect" data-v="gain">增重</button>
       </view>
     </view>
 
     <view class="section-title">忌口（可选）</view>
     <view class="checkbox-row">
-      <view class="chip {{allergies.includes('鸡蛋') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="鸡蛋">鸡蛋</view>
-      <view class="chip {{allergies.includes('牛奶') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛奶">牛奶</view>
-      <view class="chip {{allergies.includes('海鲜') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="海鲜">海鲜</view>
-      <view class="chip {{allergies.includes('牛肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛肉">牛肉</view>
-      <view class="chip {{allergies.includes('猪肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="猪肉">猪肉</view>
-      <view class="chip {{allergies.includes('羊肉') ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
+      <view class="chip {{allergySelected['鸡蛋'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="鸡蛋">鸡蛋</view>
+      <view class="chip {{allergySelected['牛奶'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛奶">牛奶</view>
+      <view class="chip {{allergySelected['海鲜'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="海鲜">海鲜</view>
+      <view class="chip {{allergySelected['牛肉'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="牛肉">牛肉</view>
+      <view class="chip {{allergySelected['猪肉'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="猪肉">猪肉</view>
+      <view class="chip {{allergySelected['羊肉'] ? 'chip-active' : ''}}" bindtap="toggleAllergy" data-v="羊肉">羊肉</view>
     </view>
 
     <view class="section-title">饮食范围（可选，商家菜单或自定义）</view>
     <view class="form-row">
       <text class="form-label">饮食范围</text>
-      <picker mode="selector" range="{{menuOptions}}" value="{{presetIndex}}" bindchange="onPresetChange">
-        <view class="picker">{{menuOptions[presetIndex]}}</view>
+      <picker class="form-picker" mode="selector" range="{{menuOptions}}" value="{{presetIndex}}" bindchange="onPresetChange">
+        <view class="picker"><text class="picker-value">{{menuOptions[presetIndex]}}</text><text class="picker-arrow">⌄</text></view>
       </picker>
     </view>
     <view class="merchant-dishes" wx:if="{{presetIndex > 0 && merchantMenus.length > 0}}">
@@ -51,16 +51,28 @@
       <view class="dish-note">以上为商家提供菜品（含每100g营养），选中后按这些菜生成计划；每100g营养由商家上传，仅作参考。</view>
     </view>
     <view class="form-row food-add">
-      <input class="form-input" placeholder="食物名" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />
-      <picker class="food-cat" mode="selector" range="{{foodCategoryIds}}" value="{{foodCategoryIndex}}" bindchange="onFoodCategory">
-        <view class="picker">{{foodCategoryIds[foodCategoryIndex]}}</view>
-      </picker>
+      <view class="food-field">
+        <text class="food-field-label">食物名称</text>
+        <input class="form-input" placeholder="例如：米饭" value="{{foodFormName}}" bindinput="onFoodField" data-key="foodFormName" />
+      </view>
+      <view class="food-field">
+        <text class="food-field-label">食物类别</text>
+        <picker mode="selector" range="{{foodCategoryIds}}" value="{{foodCategoryIndex}}" bindchange="onFoodCategory">
+          <view class="picker"><text class="picker-value">{{foodCategoryIds[foodCategoryIndex]}}</text><text class="picker-arrow">⌄</text></view>
+        </picker>
+      </view>
     </view>
     <view class="form-row food-add">
-      <input class="form-input" type="digit" placeholder="每100g热量" value="{{foodKcal}}" bindinput="onFoodField" data-key="foodKcal" />
-      <input class="form-input" type="digit" placeholder="份量(g)" value="{{foodGrams}}" bindinput="onFoodField" data-key="foodGrams" />
-      <button class="add-btn" bindtap="addCustomFood">＋</button>
+      <view class="food-field">
+        <text class="food-field-label">热量（kcal/100g）</text>
+        <input class="form-input" type="digit" placeholder="填写已知值" value="{{foodKcal}}" bindinput="onFoodField" data-key="foodKcal" />
+      </view>
+      <view class="food-field">
+        <text class="food-field-label">份量（g）</text>
+        <input class="form-input" type="digit" placeholder="默认 100" value="{{foodGrams}}" bindinput="onFoodField" data-key="foodGrams" />
+      </view>
     </view>
+    <button class="add-btn" bindtap="addCustomFood">添加这项食物</button>
     <view class="food-list" wx:if="{{customFoods.length > 0}}">
       <view class="food-item" wx:for="{{customFoods}}" wx:key="index">
         <text>{{item.name}}（{{item.kcal_per_100g}}kcal/100g，{{item.default_grams}}g）</text>

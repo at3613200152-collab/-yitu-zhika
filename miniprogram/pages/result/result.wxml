@@ -38,6 +38,7 @@
         <text class="prob-pct">{{c.pct}}%</text>
       </view>
       <view class="prob-note">模型是单标签分类，会把最高置信度的大类压到接近 100%、其它接近 0%——<text class="hl">不代表这餐只有蔬菜</text>；这餐可能同时含蛋类/谷物等，本栏无法判断各食材占比。</view>
+      <view class="prob-note" wx:if="{{categorySourceNote}}">{{categorySourceNote}}</view>
     </view>
 
     <view class="prompt">照片通常难以判断实际份量和用油量，你可以补充信息。</view>

@@ -3,7 +3,13 @@ page {
   background: #faf7f4;               /* 暖白 */
   color: #2a2e31;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
 }
+
+/* Reset native v2 button sizing without changing page-specific colors. */
+button { box-sizing: border-box; font-family: inherit; }
+button::after { border: none; }
 
 .container {
   padding: 28rpx 24rpx 48rpx;
@@ -26,6 +32,10 @@ page {
 
 /* 主按钮：深绿色主操作 */
 .btn-primary {
+  width: 100%;
+  min-width: 0;
+  padding: 0 24rpx;
+  line-height: 1.4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -43,6 +53,10 @@ page {
 
 /* 次要按钮 */
 .btn-secondary {
+  width: 100%;
+  min-width: 0;
+  padding: 0 24rpx;
+  line-height: 1.4;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -6,6 +6,7 @@
 .hero-date { font-size: 26rpx; color: #6b7280; margin-top: 6rpx; }
 
 .record-actions { margin-top: 32rpx; }
+.action-icon { width: 40rpx; height: 40rpx; margin-right: 14rpx; flex-shrink: 0; }
 
 .section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 32rpx 4rpx 8rpx; }
 .section-title { font-size: 32rpx; font-weight: 700; color: #2a2e31; }

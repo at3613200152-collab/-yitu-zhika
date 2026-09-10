@@ -14,12 +14,12 @@
 
     <view class="section-title">2. 是否有忌口或过敏？</view>
     <view class="checkbox-row">
-      <view class="chip {{allergens.includes('egg') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="egg">蛋</view>
-      <view class="chip {{allergens.includes('milk') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="milk">奶</view>
-      <view class="chip {{allergens.includes('seafood') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="seafood">海鲜</view>
-      <view class="chip {{allergens.includes('nut') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="nut">坚果</view>
-      <view class="chip {{allergens.includes('gluten') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="gluten">麸质</view>
-      <view class="chip {{allergens.includes('spicy') ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="spicy">辣</view>
+      <view class="chip {{allergenSelected['egg'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="egg">蛋</view>
+      <view class="chip {{allergenSelected['milk'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="milk">奶</view>
+      <view class="chip {{allergenSelected['seafood'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="seafood">海鲜</view>
+      <view class="chip {{allergenSelected['nut'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="nut">坚果</view>
+      <view class="chip {{allergenSelected['gluten'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="gluten">麸质</view>
+      <view class="chip {{allergenSelected['spicy'] ? 'chip-active' : ''}}" bindtap="toggleAllergen" data-v="spicy">辣</view>
     </view>
 
     <view class="section-title">3. 是否希望收到饮食建议？</view>

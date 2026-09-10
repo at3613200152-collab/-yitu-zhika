@@ -6,19 +6,26 @@
 .section-title { font-size: 28rpx; font-weight: 600; color: #2a2e31; margin: 24rpx 0 12rpx; }
 
 .form-row { display: flex; align-items: center; padding: 14rpx 0; border-bottom: 1rpx solid #f2eee9; }
-.form-label { font-size: 28rpx; color: #4a4e52; width: 170rpx; }
-.form-input { flex: 1; height: 72rpx; padding: 0 16rpx; background: #faf7f4; border-radius: 12rpx; font-size: 28rpx; line-height: 72rpx; }
-.picker { flex: 1; height: 72rpx; line-height: 72rpx; padding: 0 16rpx; background: #faf7f4; border-radius: 12rpx; font-size: 28rpx; }
-.option-row { display: flex; gap: 12rpx; flex: 1; }
-.opt { flex: 1; height: 72rpx; line-height: 72rpx; text-align: center; border-radius: 12rpx; background: #f4f0eb; color: #4a4e52; font-size: 26rpx; border: 2rpx solid transparent; }
-.opt-active { background: #eef4ef; color: #1f7a4d; border-color: #b9d6c4; }
+.form-label { font-size: 28rpx; color: #4a4e52; flex: 0 0 150rpx; white-space: nowrap; }
+.form-input { flex: 1 1 0%; width: 0; min-width: 0; box-sizing: border-box; height: 88rpx; padding: 0 16rpx; background: #faf7f4; border-radius: 12rpx; font-size: 28rpx; }
+.form-picker { flex: 1 1 0%; min-width: 0; }
+.picker { display: flex; align-items: center; justify-content: space-between; min-height: 88rpx; line-height: 1.5; box-sizing: border-box; padding: 12rpx 16rpx; background: #faf7f4; border-radius: 12rpx; font-size: 28rpx; }
+.picker-value { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.picker-arrow { flex-shrink: 0; margin-left: 12rpx; color: #626c68; }
+.choice-row { display: block; }
+.choice-row .form-label { display: block; margin-bottom: 12rpx; }
+.option-row { display: flex; gap: 12rpx; width: 100%; min-width: 0; }
+.opt { display: flex; align-items: center; justify-content: center; flex: 1 1 0%; width: 0; min-width: 0; margin: 0; padding: 12rpx 8rpx; min-height: 88rpx; line-height: 1.4; text-align: center; border-radius: 14rpx; background: #f4f0eb; color: #4a4e52; font-size: 28rpx; font-weight: 500; border: 2rpx solid transparent; }
+.opt-active { background: #eaf4ed; color: #1f7a4d; border-color: #1f7a4d; font-weight: 600; }
 .checkbox-row { display: flex; flex-wrap: wrap; gap: 12rpx; }
-.chip { padding: 12rpx 24rpx; border-radius: 999rpx; background: #f4f0eb; color: #4a4e52; font-size: 26rpx; }
-.chip-active { background: #fdeede; color: #c56a2b; }
+.chip { display: flex; align-items: center; justify-content: center; min-height: 80rpx; box-sizing: border-box; padding: 12rpx 24rpx; border: 2rpx solid transparent; border-radius: 999rpx; background: #f4f0eb; color: #4a4e52; font-size: 26rpx; }
+.chip-active { background: #eaf4ed; color: #1f7a4d; border-color: #1f7a4d; }
 
 .food-add { gap: 12rpx; }
-.food-cat { width: 220rpx; }
-.add-btn { width: 72rpx; height: 72rpx; line-height: 72rpx; text-align: center; background: #1f7a4d; color: #fff; border-radius: 12rpx; font-size: 34rpx; padding: 0; }
+.food-field { flex: 1 1 0%; min-width: 0; }
+.food-field-label { display: block; color: #626c68; font-size: 24rpx; margin-bottom: 8rpx; }
+.food-field .form-input { width: 100%; }
+.add-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 88rpx; margin: 16rpx 0 0; line-height: 1.4; text-align: center; background: #eef4ef; color: #1f7a4d; border: 1rpx solid #b9d6c4; border-radius: 14rpx; font-size: 28rpx; padding: 12rpx 16rpx; }
 .food-list { margin-top: 12rpx; }
 .food-item { display: flex; justify-content: space-between; align-items: center; padding: 12rpx 16rpx; background: #faf7f4; border-radius: 12rpx; margin-bottom: 8rpx; font-size: 26rpx; color: #4a4e52; }
 .del { color: #c56a2b; font-size: 24rpx; padding-left: 16rpx; }
@@ -44,15 +51,19 @@
 .meal-block { margin-top: 16rpx; padding-left: 16rpx; border-left: 4rpx solid #b9d6c4; }
 .meal-title { font-size: 26rpx; color: #6b7280; margin-bottom: 10rpx; }
 .card-inner { background: #faf7f4; border-radius: 14rpx; padding: 20rpx; margin-bottom: 12rpx; }
-.food-head { display: flex; justify-content: space-between; align-items: baseline; }
+.food-head { display: flex; flex-wrap: wrap; gap: 8rpx 16rpx; justify-content: space-between; align-items: baseline; }
 .food-name { font-size: 28rpx; font-weight: 600; color: #2a2e31; }
 .food-grams { font-size: 24rpx; color: #6b7280; }
 .raw-tag { color: #9aa0a6; margin-left: 4rpx; }
 .food-nutri { display: flex; flex-wrap: wrap; gap: 16rpx; font-size: 22rpx; color: #6b7280; margin-top: 8rpx; }
-.food-actions { display: flex; gap: 24rpx; margin-top: 14rpx; }
+.food-actions { display: flex; flex-wrap: wrap; gap: 16rpx 24rpx; margin-top: 14rpx; }
 .act { font-size: 24rpx; color: #1f7a4d; }
 .act.dislike { color: #c56a2b; }
 .removed-note { font-size: 22rpx; color: #c56a2b; margin-top: 8rpx; }
 
 .plan-foot { margin-top: 8rpx; }
 .disclaimer { font-size: 22rpx; color: #9aa0a6; text-align: center; line-height: 1.6; }
+
+.day-head, .dish, .food-item { flex-wrap: wrap; gap: 12rpx; }
+.food-name, .dish-name, .food-item text { overflow-wrap: anywhere; }
+.subtitle, .disclaimer, .dish-note { font-size: 24rpx; color: #626c68; }

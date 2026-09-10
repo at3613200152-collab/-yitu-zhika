@@ -30,10 +30,12 @@
 
 /* 成就 */
 .ach-grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.ach { width: calc((100% - 32rpx) / 3); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 18rpx 8rpx; border-radius: 16rpx; font-size: 22rpx; }
+.ach { width: calc((100% - 16rpx) / 2); min-width: 0; min-height: 176rpx; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8rpx; padding: 20rpx 12rpx; border-radius: 16rpx; font-size: 24rpx; border: 1rpx solid #e4ddd6; }
 .ach-on { background: #eef4ef; color: #1f7a4d; border: 1rpx solid #b9d6c4; }
-.ach-off { background: #f6f3ef; color: #a9adb3; }
-.ach-emoji { font-size: 42rpx; }
+.ach-off { background: #f6f3ef; color: #626c68; }
+.ach-mark { display: flex; align-items: center; justify-content: center; width: 48rpx; height: 48rpx; border-radius: 50%; background: #e4eae5; font-size: 28rpx; font-weight: 600; line-height: 1; }
+.ach-on .ach-mark { background: #1f7a4d; color: white; }
+.ach-status { font-size: 22rpx; }
 .ach-label { text-align: center; line-height: 1.3; }
 
 /* 反馈统计 */
@@ -44,3 +46,13 @@
 .hint-block { font-size: 23rpx; color: #6b7280; margin-top: 16rpx; line-height: 1.6; }
 
 .disclaimer { font-size: 22rpx; color: #9aa0a6; text-align: center; padding: 12rpx 24rpx; line-height: 1.6; }
+
+.card-head { flex-wrap: wrap; gap: 8rpx 16rpx; }
+.hero { flex-wrap: wrap; }
+.hero-right { min-width: 0; }
+.hero-note { text-align: right; }
+.row { gap: 20rpx; }
+.row-label { flex: 1; min-width: 0; }
+.row-value { max-width: 55%; text-align: right; overflow-wrap: anywhere; }
+.btn-danger { width: 100%; padding: 12rpx 16rpx; line-height: 1.4; }
+.hint-block, .disclaimer, .stat-label { font-size: 24rpx; color: #626c68; }

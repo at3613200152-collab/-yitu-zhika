@@ -32,11 +32,13 @@
   <view class="card">
     <view class="card-head"><text class="card-title">记录足迹</text><text class="card-sub">{{achievementCount}}/{{milestones.length}} 达成</text></view>
     <view class="ach-grid">
-      <view class="ach {{m.achieved ? 'ach-on' : 'ach-off'}}" wx:for="{{milestones}}" wx:key="label">
-        <text class="ach-emoji">{{m.emoji}}</text>
+      <view class="ach {{m.achieved ? 'ach-on' : 'ach-off'}}" wx:for="{{milestones}}" wx:for-item="m" wx:key="label">
+        <text class="ach-mark">{{m.achieved ? '✓' : index + 1}}</text>
         <text class="ach-label">{{m.label}}</text>
+        <text class="ach-status">{{m.achieved ? '已达成' : '未达成'}}</text>
       </view>
     </view>
+    <view class="hint-block">记录使用中的小足迹，不评价吃得多少，也不要求每天完成。</view>
   </view>
 
   <!-- 我的反馈（强调"让估算贴近你常吃的食物"，不评比吃得少） -->
@@ -47,7 +49,7 @@
       <view class="stat"><view class="stat-num">{{stats.confirmed}}</view><view class="stat-label">已确认</view></view>
       <view class="stat"><view class="stat-num">{{stats.manual}}</view><view class="stat-label">手动修正</view></view>
     </view>
-    <view class="hint-block">你确认或修正得越多，估算越贴近你常吃的食物。</view>
+    <view class="hint-block">确认和修正帮助核对当前记录。模型改进还需要你的授权、数据审核与后续训练，并非即时生效。</view>
   </view>
 
   <!-- 数据管理 -->
@@ -62,6 +64,6 @@
   </view>
 
   <view class="disclaimer">
-    你的健康信息仅用于生成饮食参考；本店不会上传或分享给第三方。估算结果非医疗诊断。
+    照片识别和饮食计划需要联网处理，具体数据用途请查看“关于与隐私”。估算结果非医疗诊断。
   </view>
 </view>

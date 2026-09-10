@@ -17,27 +17,27 @@
   },
   "tabBar": {
     "color": "#86909c",
-    "selectedColor": "#07c160",
+    "selectedColor": "#1f7a4d",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/today/today",
         "text": "今天",
-        "iconPath": "assets/tabbar/camera.png",
-        "selectedIconPath": "assets/tabbar/camera_active.png"
+        "iconPath": "assets/tabbar/ui-camera.png",
+        "selectedIconPath": "assets/tabbar/ui-camera-active.png"
       },
       {
         "pagePath": "pages/nutritionist/nutritionist",
         "text": "饮食计划",
-        "iconPath": "assets/tabbar/nutritionist.png",
-        "selectedIconPath": "assets/tabbar/nutritionist_active.png"
+        "iconPath": "assets/tabbar/ui-calendar.png",
+        "selectedIconPath": "assets/tabbar/ui-calendar-active.png"
       },
       {
         "pagePath": "pages/contribution/contribution",
         "text": "我的",
-        "iconPath": "assets/tabbar/contribution.png",
-        "selectedIconPath": "assets/tabbar/contribution_active.png"
+        "iconPath": "assets/tabbar/ui-person.png",
+        "selectedIconPath": "assets/tabbar/ui-person-active.png"
       }
     ]
   },

@@ -2,12 +2,19 @@
 const app = getApp()
 const record = require('../../utils/record.js')
 
+// label_schema v2（12 类，含水果）：与服务端 manifest 顺序一致
+// 顺序 = dairy, dessert, egg, fruit, grain, meat, mixed, other, sauce_condiment, seafood, soup_stew, vegetable
 const CATEGORY_IDS = [
+  'dairy','dessert','egg','fruit','grain','meat','mixed','other',
+  'sauce_condiment','seafood','soup_stew','vegetable'
+]
+// 旧 11 类顺序：历史记录（label_schema=v1_11class）的 category_idx 按此解释，不能混用
+const CATEGORY_IDS_LEGACY = [
   'dairy','dessert','egg','grain','meat','mixed','other',
   'sauce_condiment','seafood','soup_stew','vegetable'
 ]
 const CATEGORY_ZH = {
-  dairy:'乳制品', dessert:'甜点', egg:'蛋类', grain:'谷物主食', meat:'肉类',
+  dairy:'乳制品', dessert:'甜点', egg:'蛋类', fruit:'水果', grain:'谷物主食', meat:'肉类',
   mixed:'混合餐食', other:'其他', sauce_condiment:'酱料调味品', seafood:'水产',
   soup_stew:'汤炖菜', vegetable:'蔬菜'
 }
@@ -17,6 +24,20 @@ function zhToId(zhName) {
   if (!zhName) return null
   if (CATEGORY_IDS.indexOf(zhName) >= 0) return zhName
   return CATEGORY_IDS.find(id => CATEGORY_ZH[id] === zhName) || null
+}
+
+// 兼容两版标签体系：优先按中文名（与 schema 无关），再用 category_idx 按对应版本顺序解释。
+// 若直接按新数组解释旧记录的 idx，会把"谷物"错读成"水果"。
+function categoryIdFromResult(res) {
+  if (!res) return null
+  const byName = zhToId(res.category_name)
+  if (byName) return byName
+  const idx = res.category_idx
+  if (typeof idx === 'number' && idx >= 0) {
+    const ids = res.category_label_schema === 'v2_fruit_12class' ? CATEGORY_IDS : CATEGORY_IDS_LEGACY
+    if (idx < ids.length) return ids[idx]
+  }
+  return null
 }
 
 function uuid() {
@@ -54,10 +75,7 @@ Page({
       return
     }
     if (!record.capture_session_id) record.capture_session_id = uuid()
-    let catId = null
-    const idx = record.result && record.result.category_idx
-    if (typeof idx === 'number' && idx >= 0 && idx < CATEGORY_IDS.length) catId = CATEGORY_IDS[idx]
-    else if (record.result && record.result.category_name) catId = zhToId(record.result.category_name)
+    const catId = categoryIdFromResult(record.result)
     const categoryIndex = catId ? CATEGORY_IDS.indexOf(catId) : -1
     this.setData({
       record,
@@ -65,6 +83,10 @@ Page({
       editWeight: String(Math.round(record.result.weight || 0)),
       editCategory: categoryIndex >= 0 ? CATEGORY_ZH[CATEGORY_IDS[categoryIndex]] : (record.result.category_name || ''),
       categoryIndex,
+      // 决策 C：类别来自独立类别模型（12 类，含水果），热量/宏量来自五目标模型
+      categorySourceNote: record.result.category_label_schema === 'v2_fruit_12class'
+        ? '类别含"水果"（12 类标签体系），来自独立类别模型；热量与宏量来自五目标模型。'
+        : '',
       confirmed: !!record.feedbackSubmitted,
       consent: !!wx.getStorageSync('training_consent'),   // 尊重用户在"我的"里的全局授权设置
       // 负值/异常字段（不作为正常营养值展示，显示"待确认/异常"）
@@ -79,11 +101,7 @@ Page({
   toggleConsent() { this.setData({ consent: !this.data.consent }) },
 
   modelCategoryId(r) {
-    const res = r.result || {}
-    if (typeof res.category_idx === 'number' && res.category_idx >= 0 && res.category_idx < CATEGORY_IDS.length) {
-      return CATEGORY_IDS[res.category_idx]
-    }
-    return zhToId(res.category_name)
+    return categoryIdFromResult(r.result || {})
   },
 
   // 确认记录（主操作）→ /record（含授权 + 溯源）
@@ -101,6 +119,9 @@ Page({
       model_weight: r.result.weight || null,
       model_category_probs: r.result.category_probs || null,
       model_category_prob: r.result.category_prob || null,
+      // 决策 C 溯源：类别来自独立类别模型，需随记录落库以区分 11/12 类口径
+      category_model: r.result.category_model || null,
+      category_label_schema: r.result.category_label_schema || null,
       quality: 'confirm_only',
       training_consent: !!this.data.consent,
       consent_version: this.data.consentVersion
@@ -148,6 +169,8 @@ Page({
       model_category: this.modelCategoryId(r),
       model_calories: r.result.calories || null,
       model_weight: r.result.weight || null,
+      category_model: r.result.category_model || null,
+      category_label_schema: r.result.category_label_schema || null,
       quality: 'manual_typed',
       corrected_calories: parseFloat(this.data.editCalories) || null,
       corrected_weight: parseFloat(this.data.editWeight) || null,

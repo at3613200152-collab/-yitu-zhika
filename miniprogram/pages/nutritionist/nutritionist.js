@@ -1,12 +1,13 @@
 // pages/nutritionist/nutritionist.js - 饮食计划（可调整的建议，非强制菜单）
 const app = getApp()
 
+// 与 result.js 一致：label_schema v2 为 12 类（含水果）
 const CATEGORY_IDS = [
-  'dairy','dessert','egg','grain','meat','mixed','other',
+  'dairy','dessert','egg','fruit','grain','meat','mixed','other',
   'sauce_condiment','seafood','soup_stew','vegetable'
 ]
 const CATEGORY_ZH = {
-  dairy:'乳制品', dessert:'甜点', egg:'蛋类', grain:'谷物主食', meat:'肉类',
+  dairy:'乳制品', dessert:'甜点', egg:'蛋类', fruit:'水果', grain:'谷物主食', meat:'肉类',
   mixed:'混合餐食', other:'其他', sauce_condiment:'酱料调味品', seafood:'水产',
   soup_stew:'汤炖菜', vegetable:'蔬菜'
 }
@@ -30,6 +31,7 @@ Page({
     activityLevels: ['久坐', '轻度', '中度', '活跃', '极高'],
     activityValues: ['sedentary', 'light', 'moderate', 'active', 'very_active'],
     activityIndex: 2, goal: 'maintain', allergies: [],
+    allergySelected: {},
     presets: undefined,
     menuOptions: ['默认（营养库）'],
     merchantMenus: [],
@@ -54,7 +56,9 @@ Page({
     const list = this.data.allergies.slice()
     const i = list.indexOf(v)
     if (i >= 0) list.splice(i, 1); else list.push(v)
-    this.setData({ allergies: list })
+    const allergySelected = {}
+    list.forEach(key => { allergySelected[key] = true })
+    this.setData({ allergies: list, allergySelected })
   },
 
   onLoad() {

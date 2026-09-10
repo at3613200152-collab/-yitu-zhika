@@ -24,7 +24,7 @@
     <image src="{{item.imagePath}}" mode="aspectFill" class="record-thumb"></image>
     <view class="record-info">
       <view class="record-cat">
-        <text class="cat-dot" style="background: {{item.result.category_name === '蔬菜' ? '#07c160' : item.result.category_name === '肉类' ? '#f56c6c' : item.result.category_name === '甜点' ? '#f7ba2a' : '#8a94a6'}};"></text>
+        <text class="cat-dot" style="background: {{item.result.category_name === '蔬菜' ? '#07c160' : item.result.category_name === '肉类' ? '#f56c6c' : item.result.category_name === '水果' ? '#ff976a' : item.result.category_name === '甜点' ? '#f7ba2a' : '#8a94a6'}};"></text>
         <text class="record-name">{{item.result.category_name || '未知'}}</text>
         <text class="record-grams">{{item.result.weight}} g</text>
       </view>

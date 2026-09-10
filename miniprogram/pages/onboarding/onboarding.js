@@ -5,6 +5,7 @@ Page({
   data: {
     goal: '',  // 'maintain' | 'reduce' | 'gain'
     allergens: [],  // ['egg', 'milk', 'seafood', 'nut', 'gluten', 'spicy']
+    allergenSelected: {},
     advice: ''  // 'yes' | 'no'
   },
 
@@ -23,14 +24,16 @@ Page({
 
   toggleAllergen(e) {
     const v = e.currentTarget.dataset.v
-    const list = this.data.allergens
+    const list = this.data.allergens.slice()
     const idx = list.indexOf(v)
     if (idx >= 0) {
       list.splice(idx, 1)
     } else {
       list.push(v)
     }
-    this.setData({ allergens: list })
+    const allergenSelected = {}
+    list.forEach(key => { allergenSelected[key] = true })
+    this.setData({ allergens: list, allergenSelected })
   },
 
   selectAdvice(e) {
@@ -68,6 +71,6 @@ Page({
     }
     wx.setStorageSync('user_profile', profile)
     app.globalData.userProfile = profile
-    wx.switchTab({ url: '/pages/camera/camera' })
+    wx.switchTab({ url: '/pages/today/today' })
   }
 })

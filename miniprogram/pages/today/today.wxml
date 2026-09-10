@@ -7,7 +7,8 @@
   <!-- 记录区：一个主操作 + 一个次要操作 -->
   <view class="record-actions">
     <button class="btn-primary" bindtap="takePhoto" disabled="{{loading}}">
-      {{loading ? '识别中…' : '📷 拍照记录'}}
+      <image wx:if="{{!loading}}" class="action-icon" src="/assets/tabbar/ui-camera-white.png" mode="aspectFit"></image>
+      <text>{{loading ? '识别中…' : '拍照记录'}}</text>
     </button>
     <button class="btn-secondary" bindtap="chooseAlbum" disabled="{{loading}}">从相册选择</button>
   </view>
