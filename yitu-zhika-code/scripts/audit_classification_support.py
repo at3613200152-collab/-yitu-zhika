@@ -28,6 +28,51 @@ def categories_from_manifest(path):
     return [c for c in sorted(cti, key=cti.get)]
 
 
+def support_metrics(true, pred, categories, *, name='model', manifest=None):
+    """逐类 support/predicted/TP/FP/FN + P/R/F1、两套 Macro-F1、balanced accuracy、混淆矩阵。
+
+    供本脚本与 scripts/compare_schema_runs.py 共用（同一套定义，避免两处实现漂移）。
+    """
+    n_cls = len(categories)
+    if true and max(max(true), max(pred)) >= n_cls:
+        raise ValueError(f'类别索引超出 {n_cls} 类（{categories}）；请用对应 manifest 解释')
+    cm = [[0] * n_cls for _ in range(n_cls)]
+    for t, p in zip(true, pred):
+        cm[t][p] += 1
+    n = len(true)
+
+    per_class = []
+    for i, cat in enumerate(categories):
+        support = sum(cm[i])                              # 真值为 i（行和）
+        predicted = sum(row[i] for row in cm)             # 预测为 i（列和）
+        tp = cm[i][i]
+        precision = tp / predicted if predicted else 0.0
+        recall = tp / support if support else None        # 无支持即 None(不宣称)
+        f1 = (2 * precision * recall / (precision + recall)) if (precision > 0 and recall) else 0.0
+        per_class.append({'name': cat, 'support': support, 'predicted': predicted,
+                          'tp': tp, 'precision': round(precision, 4),
+                          'recall': round(recall, 4) if recall is not None else None,
+                          'f1': round(f1, 4) if recall is not None else 0.0})
+
+    supported = [c for c in per_class if c['support'] > 0]
+    macro_f1_all = sum(c['f1'] for c in per_class) / n_cls
+    macro_f1_supported = sum(c['f1'] for c in supported) / len(supported) if supported else None
+    balanced_acc = sum(c['recall'] for c in supported) / len(supported) if supported else None
+    accuracy = sum(cm[i][i] for i in range(n_cls)) / n if n else None
+    pred_dist = {categories[i]: sum(cm[r][i] for r in range(n_cls)) for i in range(n_cls)}
+    return {
+        'name': name, 'n': n, 'n_classes': n_cls,
+        'categories': list(categories), 'manifest': manifest,
+        'accuracy': round(accuracy, 4) if accuracy is not None else None,
+        'macro_f1_all_classes': round(macro_f1_all, 4),
+        'macro_f1_supported': round(macro_f1_supported, 4) if macro_f1_supported is not None else None,
+        'balanced_accuracy_supported': round(balanced_acc, 4) if balanced_acc is not None else None,
+        'n_supported_classes': len(supported),
+        'pred_distribution': pred_dist,
+        'per_class': per_class, 'confusion_matrix': cm,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--predictions', required=True)
@@ -44,46 +89,8 @@ def main():
         for r in csv.DictReader(f):
             true.append(int(r['true_coarse_class']))
             pred.append(int(r['pred_coarse_class']))
-    n = len(true)
-    if true and max(max(true), max(pred)) >= n_cls:
-        raise SystemExit(f'预测里的类别索引超出 {n_cls} 类（{CATEGORIES}）；请用 --manifest 指定正确清单')
-    cm = [[0] * n_cls for _ in range(n_cls)]
-    for t, p in zip(true, pred):
-        cm[t][p] += 1
-
-    per_class = []
-    for i, cat in enumerate(CATEGORIES):
-        support = sum(cm[i])                              # 真值为 i（行和）
-        predicted = sum(row[i] for row in cm)             # 预测为 i（列和）
-        tp = cm[i][i]
-        fp = predicted - tp
-        fn = support - tp
-        precision = tp / predicted if predicted else 0.0
-        recall = tp / support if support else None        # 无支持即 None(不宣称)
-        f1 = (2 * precision * recall / (precision + recall)) if (precision > 0 and recall) else 0.0
-        per_class.append({'name': cat, 'support': support, 'predicted': predicted,
-                          'tp': tp, 'precision': round(precision, 4),
-                          'recall': round(recall, 4) if recall is not None else None,
-                          'f1': round(f1, 4) if recall is not None else 0.0})
-
-    supported = [c for c in per_class if c['support'] > 0]
-    macro_f1_all = sum(c['f1'] for c in per_class) / n_cls
-    macro_f1_supported = sum(c['f1'] for c in supported) / len(supported) if supported else None
-    balanced_acc = sum(c['recall'] for c in supported) / len(supported) if supported else None
-    accuracy = sum(cm[i][i] for i in range(n_cls)) / n
-    pred_dist = {CATEGORIES[i]: sum(cm[r][i] for r in range(n_cls)) for i in range(n_cls)}
-
-    summary = {
-        'name': args.name, 'n': n, 'n_classes': n_cls,
-        'categories': CATEGORIES, 'manifest': args.manifest,
-        'accuracy': round(accuracy, 4),
-        'macro_f1_all_classes': round(macro_f1_all, 4),
-        'macro_f1_supported': round(macro_f1_supported, 4) if macro_f1_supported is not None else None,
-        'balanced_accuracy_supported': round(balanced_acc, 4) if balanced_acc is not None else None,
-        'n_supported_classes': len(supported),
-        'pred_distribution': pred_dist,
-        'per_class': per_class, 'confusion_matrix': cm,
-    }
+    summary = support_metrics(true, pred, CATEGORIES, name=args.name, manifest=args.manifest)
+    per_class = summary['per_class']
     stamp = time.strftime('%Y%m%d-%H%M%S')
     out = Path(f'artifacts/classification-support-{stamp}/evidence.json')
     out.parent.mkdir(parents=True, exist_ok=True)
