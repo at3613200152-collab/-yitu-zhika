@@ -21,6 +21,12 @@ ANNOT_DIR = ROOT / "data" / "annotations"          # 私有存储，gitignore
 ANNOT_DIR.mkdir(parents=True, exist_ok=True)
 
 LABEL_SOURCES = {"model_only", "user_estimate", "measured", "reference"}
+# 类别白名单（label_schema v1=11 类 / v2=12 类含 fruit）。用户标注必须落在这两个集合内，
+# 否则同一列会混入无法解释的取值；同时记录该条标注所属的 schema。
+CATEGORIES_V1 = {'dairy', 'dessert', 'egg', 'grain', 'meat', 'mixed', 'other',
+                 'sauce_condiment', 'seafood', 'soup_stew', 'vegetable'}
+CATEGORIES_V2 = CATEGORIES_V1 | {'fruit'}
+VALID_CATEGORIES = CATEGORIES_V1 | CATEGORIES_V2
 MASS_BASIS = {"raw", "as_served", "unknown"}
 VALID_QUALITY = {"confirm_only", "directional", "manual_typed", "skipped"}
 
@@ -138,13 +144,28 @@ def save_record(payload, client_ip):
         "weight": payload.get("model_weight"),
         "category_probs": payload.get("model_category_probs"),
         "category_prob": payload.get("model_category_prob"),
+        # 决策 C：类别与热量来自不同模型，快照里同时记录类别来源与其标签体系
+        "category_model": payload.get("category_model"),
+        "category_label_schema": payload.get("category_label_schema"),
     }
+    # 用户标注的类别必须是白名单内的 id（11 类或 12 类），避免脏值进入训练数据
+    corrected_category = payload.get("corrected_category")
+    if corrected_category is not None:
+        corrected_category = str(corrected_category).strip()
+        if corrected_category == "":
+            corrected_category = None
+        elif corrected_category not in VALID_CATEGORIES:
+            raise ValueError(f"corrected_category 不是合法类别：{corrected_category}")
+
     # 标签值（用户填写的；未提供为 None，绝不填 0）
     label_value = {
         "corrected_calories": payload.get("corrected_calories"),
         "corrected_weight": payload.get("corrected_weight"),
-        "corrected_category": payload.get("corrected_category"),
+        "corrected_category": corrected_category,
         "measured_weight": payload.get("measured_weight"),
+        # 标注所属标签体系：fruit 只可能来自 v2；其余 id 两版共用（客户端可显式带上）
+        "label_schema": (payload.get("category_label_schema")
+                         or ('v2_fruit_12class' if corrected_category == 'fruit' else None)),
     }
     # 标签来源：有实测重量 → measured；仅有用户填写 → user_estimate；只有确认 → model_only
     if payload.get("measured_weight") is not None:

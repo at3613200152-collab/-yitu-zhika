@@ -110,7 +110,8 @@ def epoch_pass(model, manifest, split, epoch, args, optimizer=None):
         'n': n,
         'per_field': per_field_metrics(truths_arr, preds_arr, masks_arr),
         'coarse_category_accuracy': float((cls_arr == pcls_arr).mean()) if len(cls_arr) else None,
-    }, {'ids': ids, 'truths': truths_arr, 'predictions': preds_arr, 'masks': masks_arr}
+    }, {'ids': ids, 'truths': truths_arr, 'predictions': preds_arr, 'masks': masks_arr,
+        'classes': cls_arr, 'pred_classes': pcls_arr}
 
 
 def main():
@@ -249,14 +250,23 @@ def main():
     best_path = wgt / 'best.pt'
     model.load_state_dict(torch.load(best_path, map_location='cpu', weights_only=True)['model'])
     test_metrics, detail = epoch_pass(model, manifest, 'test', best_epoch, args)
+    # 逐盘预测需带类别列，否则无法用 scripts/audit_classification_support.py 做逐类支持度审计
+    idx_to_name = {v: k for k, v in manifest['category_to_idx'].items()}
     with (out / 'test_predictions.csv').open('w', encoding='utf-8', newline='') as f:
         w = csv.writer(f)
-        w.writerow(['dish_id'] + [f'true_{t}' for t in TARGETS] + [f'pred_{t}' for t in TARGETS])
+        w.writerow(['dish_id'] + [f'true_{t}' for t in TARGETS] + [f'pred_{t}' for t in TARGETS]
+                   + [f'mask_{t}' for t in TARGETS]
+                   + ['true_coarse_class', 'pred_coarse_class', 'true_coarse_name', 'pred_coarse_name'])
         for i, d in enumerate(detail['ids']):
-            w.writerow([d] + detail['truths'][i].tolist() + detail['predictions'][i].tolist())
+            tcls, pcls = int(detail['classes'][i]), int(detail['pred_classes'][i])
+            w.writerow([d] + detail['truths'][i].tolist() + detail['predictions'][i].tolist()
+                       + detail['masks'][i].astype(int).tolist()
+                       + [tcls, pcls, idx_to_name.get(tcls), idx_to_name.get(pcls)])
     atomic_json(out / 'test_metrics.json', {'best_epoch': best_epoch,
                                             'checkpoint_sha256': file_digest(best_path),
-                                            'metrics': test_metrics, 'manifest_sha256': file_digest(manifest_path)})
+                                            'metrics': test_metrics, 'manifest_sha256': file_digest(manifest_path),
+                                            'label_schema_version': manifest.get('label_schema_version', 'v1_11class'),
+                                            'num_classes': len(manifest['category_to_idx'])})
     report(stage='complete', tag=args.tag, best_epoch=best_epoch, test=test_metrics)
 
 
