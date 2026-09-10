@@ -72,7 +72,7 @@ def epoch_pass(model, manifest, split, epoch, args, optimizer=None):
     model.train(training)
     loader = DataLoader(MacrosDataset(manifest, split, epoch), batch_size=args.batch,
                         shuffle=training, num_workers=0, pin_memory=True, drop_last=False,
-                        generator=torch.Generator().manual_seed(42 + epoch))
+                        generator=torch.Generator().manual_seed(args.seed + epoch))
     total, reg_total, n = 0.0, 0.0, 0
     truths, preds, masks, classes, pclasses, ids = [], [], [], [], [], []
     for batch, (images, target, mask, cls, dish_ids) in enumerate(loader, 1):
@@ -223,6 +223,11 @@ def main():
         import random as _rng
         config = {'tag': args.tag, 'seed': args.seed, 'epochs': args.epochs,
                   'batch': args.batch, 'protocol': 'meal_macros_v1',
+                  'num_classes': len(manifest['category_to_idx']),
+                  'label_schema_version': manifest.get('label_schema_version', 'v1_11class'),
+                  'sampler_seed_base': args.seed,
+                  'sampler_rule': 'seed_epoch(epoch) 全局种子 + DataLoader 生成器 manual_seed(seed+epoch)',
+                  'manifest': str(manifest_path),
                   'manifest_sha256': file_digest(manifest_path),
                   'code_sha256': file_digest(Path(__file__))}
         payload = {'model': model.state_dict(),

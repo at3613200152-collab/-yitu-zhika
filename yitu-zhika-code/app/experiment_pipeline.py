@@ -18,9 +18,39 @@ ROOT = Path(__file__).resolve().parents[1]
 MACROS_VERSION = 'meal_macros_v1'
 MACROS_CKPT = ROOT / 'checkpoints/meal_macros_v1/v1_expanded/best.pt'   # P1-C: 更优的扩展(3390)版
 MACROS_MANIFEST = ROOT / 'results/meal_macros_expanded_v1/manifest.json'
-CATEGORY_ZH = {'dairy': '乳制品', 'dessert': '甜点', 'egg': '蛋类', 'grain': '谷物主食',
-    'meat': '肉类', 'mixed': '混合餐食', 'other': '其他', 'sauce_condiment': '酱料调味品',
-    'seafood': '水产', 'soup_stew': '汤炖菜', 'vegetable': '蔬菜'}
+CATEGORY_ZH = {'dairy': '乳制品', 'dessert': '甜点', 'egg': '蛋类', 'fruit': '水果',
+    'grain': '谷物主食', 'meat': '肉类', 'mixed': '混合餐食', 'other': '其他',
+    'sauce_condiment': '酱料调味品', 'seafood': '水产', 'soup_stew': '汤炖菜',
+    'vegetable': '蔬菜'}
+
+
+def resolve_macros_manifest(checkpoint):
+    """解析五头权重对应的训练 manifest。
+
+    label_schema v2 起类别集合会变（新增 fruit，12 类），因此**必须**以该 checkpoint 记录的
+    训练 manifest 为准，而不是全局常量，否则 category_idx→名称 会错位。
+    返回 (manifest_dict, 相对路径或绝对路径, 校验说明)。
+    """
+    cfg = checkpoint.get('config') or {}
+    rec = cfg.get('manifest')
+    if rec:
+        p = Path(rec)
+        if not p.is_absolute():
+            p = ROOT / rec
+        if p.exists():
+            if cfg.get('manifest_sha256') and file_digest(p) != cfg['manifest_sha256']:
+                raise ValueError(f'五头权重记录的 manifest 已变化: {p}')
+            try:
+                shown = str(p.relative_to(ROOT))
+            except ValueError:
+                shown = str(p)
+            if int(cfg.get('num_classes') or 0) and int(cfg['num_classes']) != len(
+                    json.loads(p.read_text(encoding='utf-8'))['category_to_idx']):
+                raise ValueError(f'五头权重记录的类别数与 manifest 不一致: {p}')
+            return json.loads(p.read_text(encoding='utf-8')), shown, 'from_checkpoint_config'
+    if not MACROS_MANIFEST.exists():
+        raise FileNotFoundError(str(MACROS_MANIFEST))
+    return read(MACROS_MANIFEST), str(MACROS_MANIFEST.relative_to(ROOT)), 'fallback_global_constant'
 
 
 def read(path):
@@ -84,17 +114,22 @@ class ExperimentPipeline:
         """P1-B：加载五头宏量模型（若 checkpoint 存在），主输出切换到宏量模型。"""
         if self.macros is not None:
             return 'loaded'
-        if not MACROS_CKPT.exists() or not MACROS_MANIFEST.exists():
+        if not MACROS_CKPT.exists():
             return 'not_available'
         import hashlib as _hl
-        macros_manifest = read(MACROS_MANIFEST)
         ck = torch.load(MACROS_CKPT, map_location='cpu', weights_only=True)
+        macros_manifest, shown, source = resolve_macros_manifest(ck)
         model = MealMacrosNet(macros_manifest, pretrained=False)
         model.load_state_dict(ck['model'], strict=True)
         model.to(self.device).eval()
         self.macros = model
         self.macros_version = MACROS_VERSION
         self.macros_sha = _hl.sha256(MACROS_CKPT.read_bytes()).hexdigest()
+        # 类别映射与权重同步（12 类同理）：避免用旧 11 类映射解释 12 类 logits
+        self.macros_manifest_path = shown
+        self.macros_manifest_source = source
+        self.macros_label_schema = macros_manifest.get('label_schema_version', 'v1_11class')
+        self.macros_categories = {v: k for k, v in macros_manifest['category_to_idx'].items()}
         self.macros_status = 'supported'
         return 'loaded'
 
@@ -187,15 +222,19 @@ class ExperimentPipeline:
                 result['macros_status'] = 'supported'
                 mprob = mlogits.float().softmax(1)[0]
                 mindex = int(mprob.argmax())
+                # 类别名称用**五头权重自己的** manifest 映射（label_schema v2 为 12 类，含 fruit）
+                mcat = self.macros_categories
                 result['category_idx'] = mindex
-                result['category_name'] = CATEGORY_ZH[self.categories[mindex]]
+                result['category_name'] = CATEGORY_ZH.get(mcat[mindex], mcat[mindex])
                 result['category_prob'] = float(mprob[mindex])
                 mtop = torch.argsort(mprob, descending=True)[:5].tolist()
                 result['category_probs'] = [
-                    {'idx': i, 'id': self.categories[i], 'name': CATEGORY_ZH[self.categories[i]],
+                    {'idx': i, 'id': mcat[i], 'name': CATEGORY_ZH.get(mcat[i], mcat[i]),
                      'prob': round(float(mprob[i]), 3), 'pct': round(float(mprob[i]) * 100, 1)}
                     for i in mtop
                 ]
+                result['label_schema'] = self.macros_label_schema
+                result['category_manifest'] = self.macros_manifest_path
                 result['source_model'] = self.macros_version
                 result['source_model_sha256'] = self.macros_sha
                 result['target_names'] = ['calories', 'mass', 'protein', 'carbohydrate', 'fat']

@@ -49,6 +49,17 @@ CATEGORY_KEYWORDS: List[Tuple[str, List[str]]] = [
         "couscous", "polenta", "grits", "pancake", "waffle", "croissant",
         "bun", "roll", "cracker", "pretzel", "cornmeal", "flatbread",
     ]),
+    # label_schema v2（2026-09-10）：新增 fruit 类。此前水果类食材被并入 vegetable，
+    # 导致「蔬菜」占比虚高（训练集 vegetable 约 54%），且 watermelon/kiwi/果汁无从归类落到 other。
+    # 口径：按**烹饪习惯**而非植物学分类——番茄/鳄梨/橄榄/甜椒仍归 vegetable。
+    ("fruit", [
+        "apple", "applesauce", "banana", "berries", "blackberries", "blueberries",
+        "raspberries", "strawberries", "cranberries", "cherry", "date", "fig",
+        "grape", "grapefruit", "kiwi", "lemon", "lime", "mango", "melon",
+        "cantaloupe", "honeydew", "watermelon", "nectarine", "orange", "mandarin",
+        "peach", "pear", "pineapple", "plum", "apricot", "pomegranate", "raisin",
+        "dried fruit", "fruit",
+    ]),
     ("soup_stew", [
         "soup", "broth", "stew", "chili", "curry", "chowder",
         "gumbo", "bisque",
@@ -60,17 +71,13 @@ CATEGORY_KEYWORDS: List[Tuple[str, List[str]]] = [
         "eggplant", "cucumber", "cabbage", "lettuce", "kale",
         "brussels sprouts", "green beans", "peas", "celery",
         "avocado", "olives", "salsa", "coleslaw", "garden salad",
-        "caesar salad", "vinegar", "parsley", "lemon juice", "lime",
+        "caesar salad", "vinegar", "parsley",
         "garlic", "ginger", "herbs", "basil", "cilantro", "mint",
         "scallion", "shallot", "leek", "artichoke", "radish",
         "beets", "turnip", "pumpkin", "squash", "arugula",
-        "watercress", "endive", "radicchio", "fennel", "lemon",
-        "apple", "berries", "strawberries", "fruit", "banana",
-        "orange", "grape", "melon", "pineapple", "mango", "peach",
-        "pear", "cherry", "blueberry", "raspberry", "cranberry",
-        "raisin", "dried fruit", "date", "fig",
+        "watercress", "endive", "radicchio", "fennel",
         # 不规则复数/常见复合（词边界+s/es 无法覆盖，显式列出）
-        "chickpea", "blackberries", "blueberries", "raspberries", "cranberries",
+        "chickpea",
     ]),
     ("dessert", [
         "cake", "cookie", "chocolate", "brownie", "pie", "tart",
@@ -105,6 +112,17 @@ OVERRIDES: Dict[str, Tuple[str, str]] = {
     "sweet potato": ("vegetable", "override"),
     "caesar salad": ("vegetable", "override"),
     "garden salad": ("vegetable", "override"),
+    # label_schema v2：复合名以「容器/形式词」结尾时，按**主料**归类别（"salad" 不再一律算蔬菜）
+    "tuna salad": ("seafood", "override"),
+    "chicken salad": ("meat", "override"),
+    "pasta salad": ("grain", "override"),
+    "egg salad": ("egg", "override"),
+    "potato salad": ("vegetable", "override"),
+    "fruit salad": ("fruit", "override"),
+    "greek salad": ("vegetable", "override"),
+    # 小麦粒（"wheat berry"）是谷物，避免被 berry→fruit 误收
+    "wheat berry": ("grain", "override"),
+    "wheat berries": ("grain", "override"),
 }
 
 

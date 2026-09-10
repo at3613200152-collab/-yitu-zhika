@@ -44,6 +44,33 @@ class CategoryRuleTests(unittest.TestCase):
         self.assertEqual(cat, "meat")
         self.assertEqual(kw, "chicken")
 
+    def test_fruit_schema_v2(self):
+        # label_schema v2：新增 fruit 类，水果类食材不再并入 vegetable
+        for ingr in ("apple", "watermelon", "grapes", "kiwi", "orange",
+                     "strawberries", "banana", "figs", "cantaloupe",
+                     "grapefruit juice", "orange juice", "raisins"):
+            self.assertEqual(classify_ingredient(ingr), "fruit", ingr)
+
+    def test_fruit_schema_keeps_culinary_vegetables(self):
+        # 按烹饪习惯：番茄/鳄梨/橄榄/甜椒仍是 vegetable
+        for ingr in ("cherry tomatoes", "tomatoes", "avocado", "olives", "bell peppers"):
+            self.assertEqual(classify_ingredient(ingr), "vegetable", ingr)
+
+    def test_no_fruit_false_positive(self):
+        # wheat berry 是谷物；chicken apple sausage 的头名词是 sausage
+        self.assertEqual(classify_ingredient("wheat berry"), "grain")
+        self.assertEqual(classify_ingredient("chicken apple sausage"), "meat")
+
+    def test_salad_by_main_ingredient(self):
+        # v2：复合名以 salad 结尾时按主料归类
+        self.assertEqual(classify_ingredient("tuna salad"), "seafood")
+        self.assertEqual(classify_ingredient("chicken salad"), "meat")
+        self.assertEqual(classify_ingredient("pasta salad"), "grain")
+        self.assertEqual(classify_ingredient("fruit salad"), "fruit")
+        # 蔬菜沙拉仍是 vegetable
+        self.assertEqual(classify_ingredient("caesar salad"), "vegetable")
+        self.assertEqual(classify_ingredient("garden salad"), "vegetable")
+
 
 if __name__ == "__main__":
     unittest.main()

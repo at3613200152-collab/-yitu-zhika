@@ -183,6 +183,15 @@ def model_info():
         pipe.load_macros_if_ready()
         primary = pipe.macros_version if pipe.macros is not None else pipe.nir_version
         primary_sha = pipe.macros_sha if pipe.macros is not None else pipe.nir_sha
+        # 类别映射随主结果模型走：五头模型加载后按它自己的 manifest（label_schema v2 为 12 类）
+        if pipe.macros is not None:
+            primary_categories = {name: idx for idx, name in pipe.macros_categories.items()}
+            primary_label_schema = pipe.macros_label_schema
+            primary_category_manifest = pipe.macros_manifest_path
+        else:
+            primary_categories = manifest.get("category_to_idx", {})
+            primary_label_schema = manifest.get("label_schema_version", "v1_11class")
+            primary_category_manifest = None   # 两目标对照模型使用冻结 manifest（其类别映射即 manifest 本身）
         return jsonify({
             "status": "ok",
             # P0-A/P1-B：返回实际加载对象与能力；主结果产地为宏量模型(若已加载)或 NIR
@@ -191,10 +200,14 @@ def model_info():
             "models": {
                 "rgb": {"version": pipe.rgb_version, "sha256": pipe.rgb_sha, "role": "internal_control"},
                 "nir": {"version": pipe.nir_version, "sha256": pipe.nir_sha, "role": "reference_nir"},
-                "macros": {"version": pipe.macros_version, "sha256": pipe.macros_sha, "role": "primary_macros"} if pipe.macros is not None else None,
+                "macros": {"version": pipe.macros_version, "sha256": pipe.macros_sha, "role": "primary_macros",
+                           "label_schema": pipe.macros_label_schema,
+                           "category_manifest": pipe.macros_manifest_path} if pipe.macros is not None else None,
                 "external": {"version": "calorieclip_official_v1", "role": "baseline"},
             },
-            "categories": manifest.get("category_to_idx", {}),
+            "categories": primary_categories,
+            "label_schema": primary_label_schema,
+            "category_manifest": primary_category_manifest,
             "target_names": pipe.target_names,
             "macros": {"status": pipe.macros_status, "unit": pipe.macros_unit,
                        "fields": ["protein_g", "carbohydrate_g", "fat_g"]},
