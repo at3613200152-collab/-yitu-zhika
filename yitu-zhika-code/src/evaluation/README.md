@@ -14,12 +14,25 @@
 | [eval_multitask.py](eval_multitask.py) | 阶段二多任务评估（4 层 `models.generator.UNetGenerator` 供 NIR 分支） | MAE, MAPE, RMSE, R² |
 | [eval_multitask_full.py](eval_multitask_full.py) | 阶段二全量/冻结测试集评估 | 同上 |
 
-## 阶段一评估口径
+## 阶段一评估口径（**项目内有两种 PSNR 口径，不要混用**）
 
-- **PSNR**：值域 `[-1,1]`，`10·log10(4.0/MSE)`，**逐图平均**（与训练日志同量纲）。
-  换到 `[0,1]` 的 `10·log10(1/MSE)` 会整体相差一个常数，本项目统一使用前者；报告数字必须连同口径一起写。
-- **SSIM**：11×11 高斯窗，`data_range` 随调用方传入（`[-1,1]` 域为 2.0）。
-- **L1**：像素级绝对误差（另报 `l1_01`，即映射回 `[0,1]` 域的 L1）。
+| 口径 | 公式 | 用在哪些数字上 |
+|------|------|----------------|
+| **主口径** | `10·log10(1/MSE)`，`[0,1]` 域，**逐图 PSNR 再平均** | 本文档表中全部数字：26.674 / 26.654 / 22.84 / 23.33 / 18.928 / 21.062 / 14.25 |
+| 批 MSE 口径 | `10·log10(1/MSE)`，`[0,1]` 域，先全局平均 MSE | `test_metrics.json` 的 `test_psnr_batch_mse_db`（25.39） |
+| 遗留口径 | `10·log10(4/MSE)`，`[-1,1]` 域 | 仅 `train_generator.py`（7 层）与 `eval_generator.py`；与主口径相差一个常数 |
+
+主口径实现在 `src/training/train_hsi_full_v3.py::metrics()`（`src/training/train_hsi_official.py`、
+`artifacts/eval_generators_same_test.py`、`scripts/make_nir_preview.py` 同口径），因此跨脚本的数字可直接比较。
+
+> ⚠️ **已知口径瑕疵（2026-09-11 定位）**：`train_hsi_full_v3.py` 的 test 阶段只做 `torch.set_grad_enabled(False)`，
+> **没有调用 `model.eval()`**，因此上表数字是在 **BN 使用 batch 统计**（batch=8）下测得的。
+> 阶段二推理走的是 `NIR = generator(...)` 且显式 `.eval()`，同一权重在 eval 模式下为 **27.27 dB**（批 MSE 口径 25.98）。
+> 影响：绝对值偏低约 0.6 dB，方向与量级结论不受影响（锚点消融三次运行同一口径）。
+> 复现脚本：`scripts/analyze_nir_domain_gap.py`（同时打印两种模式的 PSNR 作自校验）。
+
+- **SSIM**：11×11 高斯窗，`range = 1`（主口径）；旧脚本用 `data_range=2.0` 时不可与上表直接比较。
+- **L1**：像素级绝对误差（另报 `l1_01`，即 `[0,1]` 域的 L1）。
 
 ### 当前结果（全量数据，固定缩放，327 张独立测试样本）
 

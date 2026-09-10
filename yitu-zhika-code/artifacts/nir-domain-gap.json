@@ -1,0 +1,101 @@
+{
+  "generator": "checkpoints\\hsi_full_v3\\full_seed42\\best.pt",
+  "domain_A": {
+    "name": "HSIFoodIngr-64 test (generator training domain)",
+    "n": 327,
+    "psnr_eval_mode_batch32": {
+      "psnr_per_image_mean": 27.266275935567784,
+      "psnr_batch_mse": 25.982221774014704,
+      "n": 327
+    },
+    "psnr_train_mode_batch8": {
+      "psnr_per_image_mean": 26.677739191673215,
+      "psnr_batch_mse": 25.319088118764384,
+      "n": 327
+    },
+    "rgb": {
+      "tag": "A rgb",
+      "luma_mean": 0.6293677687644958,
+      "luma_contrast_avg": 0.21094802021980286,
+      "luma_contrast_median": 0.21460115909576416,
+      "channel_std_avg": [
+        0.20123186707496643,
+        0.2157517671585083,
+        0.24792182445526123
+      ],
+      "saturated_fraction": 0.10257656396832791,
+      "dark_fraction": 0.0069429823382549695,
+      "bright_fraction": 0.14184043021012518
+    },
+    "real_nir": {
+      "tag": "A real NIR (target)",
+      "n": 327,
+      "global_mean": 0.42976081371307373,
+      "global_std": 0.18110795319080353,
+      "per_image_mean_avg": 0.4297609329223633,
+      "per_image_contrast_avg": 0.1336594671010971,
+      "per_image_contrast_median": 0.12516459822654724,
+      "per_image_span_p2_p98_avg": 0.5433642864227295,
+      "saturated_fraction": 0.010295529613436544,
+      "between_image_std_of_means": 0.1172391027212143
+    },
+    "pred_nir": {
+      "tag": "A pred NIR",
+      "n": 327,
+      "global_mean": 0.42293256521224976,
+      "global_std": 0.1722254902124405,
+      "per_image_mean_avg": 0.4229332208633423,
+      "per_image_contrast_avg": 0.12496630102396011,
+      "per_image_contrast_median": 0.11996889114379883,
+      "per_image_span_p2_p98_avg": 0.493536114692688,
+      "saturated_fraction": 0.0,
+      "between_image_std_of_means": 0.1151149794459343
+    }
+  },
+  "domain_B": {
+    "name": "Nutrition5k frozen test (deployment domain)",
+    "n": 507,
+    "rgb": {
+      "tag": "B rgb",
+      "luma_mean": 0.4678945541381836,
+      "luma_contrast_avg": 0.21569545567035675,
+      "luma_contrast_median": 0.21060477197170258,
+      "channel_std_avg": [
+        0.20681942999362946,
+        0.21931207180023193,
+        0.24224770069122314
+      ],
+      "saturated_fraction": 0.0058074188734025724,
+      "dark_fraction": 0.023441352317554242,
+      "bright_fraction": 0.007227098212909886
+    },
+    "pred_nir": {
+      "tag": "B pred NIR",
+      "n": 507,
+      "global_mean": 0.26820507645606995,
+      "global_std": 0.09314953535795212,
+      "per_image_mean_avg": 0.26820555329322815,
+      "per_image_contrast_avg": 0.08601021021604538,
+      "per_image_contrast_median": 0.08504123240709305,
+      "per_image_span_p2_p98_avg": 0.33136188983917236,
+      "saturated_fraction": 0.0,
+      "between_image_std_of_means": 0.03377080336213112
+    },
+    "pred_nir_contrast_matched_input": {
+      "tag": "B pred NIR (matched)",
+      "n": 507,
+      "global_mean": 0.3589739203453064,
+      "global_std": 0.12119204550981522,
+      "per_image_mean_avg": 0.3589741885662079,
+      "per_image_contrast_avg": 0.11849844455718994,
+      "per_image_contrast_median": 0.11817540973424911,
+      "per_image_span_p2_p98_avg": 0.4535554349422455,
+      "saturated_fraction": 0.0,
+      "between_image_std_of_means": 0.021178193390369415
+    }
+  },
+  "contrast_alignment": {
+    "A_luma_mean": 0.6293668746948242,
+    "A_luma_std": 0.26977020502090454
+  }
+}

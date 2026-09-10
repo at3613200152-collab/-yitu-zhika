@@ -135,8 +135,14 @@ $env:PYTHONPATH = "<repo>\.pptx_libs"     # 仓库内 vendored python-pptx（cp3
 两次落差分别是跨种子极差（0.116 dB）的 **67 倍 / 48 倍**；队友那版的 14.25 dB 是「朝向错位 + 不同结构/损失/轮数」
 的混合结果，**不能当作单因素结论引用**。
 
-> 评测口径：PSNR = `10·log10(4/MSE)`（值域 `[-1,1]`，逐图平均，与训练日志同口径）；SSIM 用 11×11 高斯窗。
+> 评测口径：PSNR = `10·log10(1/MSE)`（`[0,1]` 域、**逐图 PSNR 再平均**，来自 `train_hsi_full_v3.py` 的 `metrics()`）；
+> SSIM 用 11×11 高斯窗、`range=1`。本项目遗留的 7 层生成器路径（`train_generator.py` / `eval_generator.py`）用的是
+> `10·log10(4/MSE)`（`[-1,1]` 域），两者相差一个常数，**不可混用**。
 > 每次运行都记录清单 SHA、代码 SHA、标定参数与消融开关，`results/hsi_full_v3/<tag>/test_metrics.json` 存检查点 SHA。
+>
+> ⚠️ 已知口径瑕疵：`train_hsi_full_v3.py` 的 test 阶段没有调用 `model.eval()`，所以上面的 PSNR 是在 **BN 使用 batch 统计**
+> （batch=8）下测得的；而阶段二推理走的是 `eval()`，同一权重为 **27.27 dB**（复现见 `scripts/analyze_nir_domain_gap.py`）。
+> 该差异只影响绝对值（0.6 dB），不影响消融的相对结论（三次消融同一口径）。
 
 ### 阶段二：多通道多任务（冻结 507 测试集）
 
