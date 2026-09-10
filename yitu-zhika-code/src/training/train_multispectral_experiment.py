@@ -105,7 +105,7 @@ def run_epoch(model, manifest, split, epoch, args, optimizer=None):
     loader = torch.utils.data.DataLoader(
         MealDataset(manifest, split, epoch), batch_size=args.batch, shuffle=training,
         num_workers=0, pin_memory=True, drop_last=False,
-        generator=torch.Generator().manual_seed(42 + epoch),
+        generator=torch.Generator().manual_seed(args.seed + epoch),
     )
     total, reg_total, n = 0.0, 0.0, 0
     truths, predicts, pclasses, tclasses, ids = [], [], [], [], []
@@ -121,7 +121,7 @@ def run_epoch(model, manifest, split, epoch, args, optimizer=None):
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
                 optimizer.step()
-        size = len(ids)
+        size = len(dish_ids)   # 修正：原先用 len(ids)（累计列表）导致第 1 批权重为 0、后批权重递增
         n += size
         total += loss.item() * size
         reg_total += reg.item() * size
@@ -161,6 +161,10 @@ def main():
 
     out = ROOT / "results" / f"meal_exp_{args.tag}"
     wgt = ROOT / "checkpoints" / f"meal_exp_{args.tag}"
+    # 防覆盖：非空输出目录直接拒绝（本脚本无 --resume，重复跑同一 tag 会静默覆盖候选权重）
+    for p in (out, wgt):
+        if p.exists() and any(p.iterdir()):
+            raise SystemExit(f"[拒绝覆盖] 输出目录已存在且非空: {p}。请换 --tag。")
     out.mkdir(parents=True, exist_ok=True)
     wgt.mkdir(parents=True, exist_ok=True)
 
@@ -177,7 +181,15 @@ def main():
     config = {
         "protocol": f"meal_exp_{args.tag}", "mode": args.mode, "seed": args.seed,
         "joint_generator": args.joint_generator, "epochs": args.epochs, "batch_size": args.batch,
-        "rows": n_rows, "manifest_sha256": manifest.get("_sha256"), "limit": args.limit,
+        "rows": n_rows, "limit": args.limit,
+        # 溯源（2026-09-10 补）：manifest 路径+SHA、代码 SHA、冻结生成器 SHA、采样规则
+        "manifest": str(Path(args.manifest)),
+        "manifest_sha256": file_digest(Path(args.manifest)),
+        "code_sha256": file_digest(Path(__file__)),
+        "generator": str(GENERATOR.relative_to(ROOT)) if args.mode == "rgbnir" else None,
+        "generator_sha256": file_digest(GENERATOR) if args.mode == "rgbnir" else None,
+        "sampler_seed_base": args.seed,
+        "sampler_rule": "seed_epoch(epoch) 全局种子 + DataLoader 生成器 manual_seed(seed+epoch)",
     }
     atomic_json(out / "status.json", {"protocol": args.tag, "stage": "started", "config": config})
 
