@@ -38,12 +38,14 @@ WEIGHTS = ROOT / 'checkpoints/hsi_full_v3'
 
 
 class Pairs(torch.utils.data.Dataset):
-    def __init__(self, manifest, split, epoch=0, seed=42):
+    def __init__(self, manifest, split, epoch=0, seed=42, extra_rot=0, target_norm='fixed'):
         self.rows = [r for r in manifest['rows'] if r['split'] == split]
         self.paths = manifest['_paths'][split]
         self.rgb = np.load(self.paths['rgb'], mmap_mode='r')
         self.nir = np.load(self.paths['nir'], mmap_mode='r')
         self.split, self.epoch, self.seed = split, epoch, seed
+        self.extra_rot = int(extra_rot)          # 锚点消融：对目标再旋转（0=对齐口径）
+        self.target_norm = target_norm           # 锚点消融：fixed=固定缩放；per_image=逐图归一化
 
     def __len__(self):
         return len(self.rows)
@@ -52,6 +54,11 @@ class Pairs(torch.utils.data.Dataset):
         row = self.rows[index]
         rgb = np.asarray(self.rgb[row['index']]).astype(np.float32) / 255.0
         nir = np.asarray(self.nir[row['index']]).astype(np.float32)
+        if self.extra_rot % 4:
+            nir = np.rot90(nir, self.extra_rot % 4)
+        if self.target_norm == 'per_image':
+            lo, hi = np.percentile(nir, 0.5), np.percentile(nir, 99.5)
+            nir = np.clip((nir - lo) / max(hi - lo, 1e-6), 0, 1)
         if self.split == 'train':
             h = int(hashlib.sha256(f'{self.seed}:{self.epoch}:{row["id"]}'.encode()).hexdigest()[:8], 16)
             if h < 2 ** 31:
@@ -68,9 +75,11 @@ def metrics(pred01, tgt01):
             'ssim': float(sk_ssim(tgt01, pred01, data_range=1.0, gaussian_weights=True, sigma=1.5))}
 
 
-def pass_epoch(model, manifest, split, epoch, batch, report, optimizer=None, limit=None, seed=42):
+def pass_epoch(model, manifest, split, epoch, batch, report, optimizer=None, limit=None, seed=42,
+               extra_rot=0, target_norm='fixed'):
     train = optimizer is not None
-    loader = torch.utils.data.DataLoader(Pairs(manifest, split, epoch, seed), batch_size=batch,
+    loader = torch.utils.data.DataLoader(
+        Pairs(manifest, split, epoch, seed, extra_rot, target_norm), batch_size=batch,
                                          shuffle=train, num_workers=0, pin_memory=True,
                                          generator=torch.Generator().manual_seed(seed + epoch))
     total, n, rows = 0.0, 0, []
@@ -122,6 +131,10 @@ def main():
     ap.add_argument('--batch', type=int, default=8)
     ap.add_argument('--limit', type=int, default=0, help='每 epoch 最大 batch 数（冒烟）')
     ap.add_argument('--max-hours', type=float, default=7.5)
+    ap.add_argument('--extra-rot', type=int, default=0, choices=[0, 1, 2, 3],
+                    help='锚点消融：对 NIR 目标额外旋转 90° 的倍数（0=对齐口径；1~3 模拟朝向错误）')
+    ap.add_argument('--target-norm', default='fixed', choices=['fixed', 'per_image'],
+                    help='锚点消融：fixed=训练集固定缩放（默认）；per_image=逐图百分位归一化')
     args = ap.parse_args()
 
     manifest = json.loads(MANIFEST.read_text(encoding='utf-8'))
@@ -158,6 +171,7 @@ def main():
               'manifest': str(MANIFEST.relative_to(ROOT)), 'manifest_sha256': file_digest(MANIFEST),
               'code_sha256': file_digest(Path(__file__)), 'counts': manifest['counts'],
               'conversion': manifest['conversion'], 'sampler_seed_base': args.seed,
+              'ablation_extra_rot': args.extra_rot, 'ablation_target_norm': args.target_norm,
               'sampler_rule': 'flip by sha256(seed:epoch:id); DataLoader generator manual_seed(seed+epoch)'}
 
     print(f"训练/验证/测试: {manifest['counts']}", flush=True)
@@ -167,8 +181,10 @@ def main():
         if time.monotonic() - began > args.max_hours * 3600:
             report(stage='paused_budget', epoch=epoch - 1, best_epoch=best_epoch)
             break
-        tr, _ = pass_epoch(model, manifest, 'train', epoch, args.batch, report, optimizer, args.limit, args.seed)
-        va, _ = pass_epoch(model, manifest, 'val', epoch, args.batch, report, None, args.limit, args.seed)
+        tr, _ = pass_epoch(model, manifest, 'train', epoch, args.batch, report, optimizer, args.limit,
+                           args.seed, args.extra_rot, args.target_norm)
+        va, _ = pass_epoch(model, manifest, 'val', epoch, args.batch, report, None, args.limit,
+                           args.seed, args.extra_rot, args.target_norm)
         scheduler.step(va['l1_01'])
         improved = va['l1_01'] < best
         if improved:
@@ -189,7 +205,8 @@ def main():
             break
 
     model.load_state_dict(torch.load(wgt / 'best.pt', map_location='cpu', weights_only=True)['model'])
-    test, rows = pass_epoch(model, manifest, 'test', best_epoch, args.batch, report, None, None, args.seed)
+    test, rows = pass_epoch(model, manifest, 'test', best_epoch, args.batch, report, None, None,
+                            args.seed, args.extra_rot, args.target_norm)
     with (out / 'test_predictions.csv').open('w', encoding='utf-8', newline='') as f:
         w = csv.writer(f)
         w.writerow(['id', 'l1_01', 'psnr_db', 'mse', 'ssim'])
