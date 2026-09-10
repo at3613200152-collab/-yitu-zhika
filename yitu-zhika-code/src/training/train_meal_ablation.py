@@ -22,7 +22,8 @@ sys.path.insert(0, str(ROOT))
 from scripts.capsicum_job import atomic_json, check_space, check_stop, file_digest, job_lock
 from src.models.generator import UNetGenerator
 from src.models.meal_ablation import MealAblationNet
-from src.training.meal_ablation_core import ARMS, ExpandedDataset, ablation_loss, MEAN, STD
+from src.training.meal_ablation_core import (ARMS, ExpandedDataset, ablation_loss, MEAN, STD,
+                                             class_weights_from_manifest)
 from src.training.train_meal_official import regression_metrics
 
 MANIFEST = ROOT/'results/meal_expanded_v2/manifest.json'
@@ -107,6 +108,12 @@ def pass_epoch(model, manifest, split, epoch, seed, settings, batch_size, report
     n, total, regression, consistency_sum, pair_count = 0, 0., 0., 0., 0
     details = dict(ids=[], truths=[], predictions=[], classes=[], pred_classes=[], gates=[])
     last_gradients = {}
+    # P2-C：类别加权 CE（权重来自 train 划分，train/val/test 用同一组权重，保证可比）
+    class_weight = None
+    if settings.get('class_weight'):
+        class_weight, weight_info = class_weights_from_manifest(manifest, device='cuda')
+        if training:
+            report(stage='class_weight', **weight_info)
 
     def forward(rgb, semantics):
         nir = provider(rgb) if provider is not None else None
@@ -136,7 +143,8 @@ def pass_epoch(model, manifest, split, epoch, seed, settings, batch_size, report
                 pair_count += int(mask.sum())
             loss, parts = ablation_loss(output, target, classes, model.physical.scale,
                                        model.physical.density_mean, second=second,
-                                       pair_mask=mask, consistency_weight=settings['consistency'])
+                                       pair_mask=mask, consistency_weight=settings['consistency'],
+                                       class_weight=class_weight)
             if training:
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), 1., error_if_nonfinite=True)
