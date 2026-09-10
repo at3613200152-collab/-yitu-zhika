@@ -10,6 +10,10 @@ Page({
           const app = getApp()
           app.clearHistory()
           wx.removeStorageSync('predict_history')
+          wx.removeStorageSync('user_profile')
+          wx.removeStorageSync('training_consent')
+          wx.removeStorageSync('participant_id')
+          app.globalData.userProfile = null
           wx.showToast({ title: '已清除', icon: 'success' })
         }
       }

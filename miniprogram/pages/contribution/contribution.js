@@ -228,8 +228,11 @@ Page({
           try {
             wx.removeStorageSync('predict_history')
             wx.removeStorageSync('user_profile')
+            wx.removeStorageSync('training_consent')
+            wx.removeStorageSync('participant_id')
             app.globalData.history = []
             app.globalData.userProfile = null
+            this.setData({ trainingConsent: false })
             wx.showToast({ title: '已清除', icon: 'success' })
             this.computeStats()
           } catch (e) {

@@ -2,6 +2,11 @@
 const app = getApp()
 const record = require('../../utils/record.js')
 
+function displayNumber(value) {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.round(n * 10) / 10 : '-'
+}
+
 function todayKey() {
   const d = new Date()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -27,7 +32,13 @@ Page({
     const history = app.globalData.history || []
     const key = todayKey()
     const dateLabel = this.formatToday()
-    const todayMeals = history.filter(r => r.timestamp && String(r.timestamp).slice(0, 10) === key)
+    const todayMeals = history
+      .filter(r => r.timestamp && String(r.timestamp).slice(0, 10) === key)
+      .map(item => ({
+        ...item,
+        displayCalories: displayNumber(item.result && item.result.calories),
+        displayWeight: displayNumber(item.result && item.result.weight)
+      }))
     const sumCalories = todayMeals.reduce((s, r) => s + (r.result && r.result.calories ? r.result.calories : 0), 0)
     this.setData({
       dateLabel: dateLabel,

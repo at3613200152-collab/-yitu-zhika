@@ -12,7 +12,7 @@ button { box-sizing: border-box; font-family: inherit; }
 button::after { border: none; }
 
 .container {
-  padding: 28rpx 24rpx 48rpx;
+  padding: 28rpx 24rpx calc(48rpx + env(safe-area-inset-bottom));
   min-height: 100vh;
   box-sizing: border-box;
   background-color: #faf7f4;
@@ -90,3 +90,6 @@ button::after { border: none; }
   box-sizing: border-box;
   margin: 12rpx 0;
 }
+
+/* 保持辅助文字在真机上可读，避免 20rpx 以下的小字。 */
+.muted-text { color: #626c68; font-size: 24rpx; line-height: 1.6; }

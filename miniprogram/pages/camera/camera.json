@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "拍照识别"
+  "navigationBarTitleText": "拍照识别",
+  "navigationBarBackgroundColor": "#faf7f4",
+  "navigationBarTextStyle": "black"
 }

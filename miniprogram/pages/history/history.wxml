@@ -1,10 +1,8 @@
 <view class="container">
-  <view class="title">历史记录</view>
-
   <!-- 打卡摘要 -->
   <view class="summary card" wx:if="{{total > 0}}">
     <view class="summary-left">
-      <text class="sum-num">🔥 {{streak}}</text>
+      <text class="sum-num">{{streak}}</text>
       <text class="sum-label">天连续记录</text>
     </view>
     <view class="summary-right">
@@ -24,11 +22,11 @@
     <image src="{{item.imagePath}}" mode="aspectFill" class="record-thumb"></image>
     <view class="record-info">
       <view class="record-cat">
-        <text class="cat-dot" style="background: {{item.result.category_name === '蔬菜' ? '#07c160' : item.result.category_name === '肉类' ? '#f56c6c' : item.result.category_name === '水果' ? '#ff976a' : item.result.category_name === '甜点' ? '#f7ba2a' : '#8a94a6'}};"></text>
+        <text class="cat-dot" style="background: {{item.result.category_name === '蔬菜' ? '#1f7a4d' : item.result.category_name === '肉类' ? '#c56a2b' : item.result.category_name === '水果' ? '#e8833a' : item.result.category_name === '甜点' ? '#b8892e' : '#7d8581'}};"></text>
         <text class="record-name">{{item.result.category_name || '未知'}}</text>
-        <text class="record-grams">{{item.result.weight}} g</text>
+        <text class="record-grams">{{item.displayWeight}} g</text>
       </view>
-      <view class="record-kcal">{{item.result.calories}} kcal</view>
+      <view class="record-kcal">{{item.displayCalories}} kcal</view>
       <view class="record-meta">
         <text>{{item.timestamp}}</text>
         <text class="flag" wx:if="{{item.corrected}}">已修正</text>

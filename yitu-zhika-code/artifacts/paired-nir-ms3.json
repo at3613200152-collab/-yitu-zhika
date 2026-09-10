@@ -1,0 +1,85 @@
+{
+  "experiment": "ms3: RGB arm (ms2) vs RGB+NIR arm using the full-data generator (26.674 dB)",
+  "rgb_arm": "results/meal_exp_ms2_rgb_seed{42,43,44}",
+  "nir_arm": "results/meal_exp_ms3_rgbnir_seed{42,43,44}",
+  "test_split": "frozen Nutrition5k 507 dishes",
+  "bootstrap_resamples": 10000,
+  "per_seed": [
+    {
+      "seed": 42,
+      "n_dishes": 507,
+      "calories": {
+        "rgb_mae": 58.550529290703395,
+        "nir_mae": 56.811123410390444,
+        "delta_mean_nir_minus_rgb": -1.7394058803129477,
+        "ci_low": -4.379954871341321,
+        "ci_high": 0.9409666588085408,
+        "crosses_zero": true
+      },
+      "mass": {
+        "rgb_mae": 36.77710519222583,
+        "nir_mae": 35.959513060439974,
+        "delta_mean_nir_minus_rgb": -0.8175921317858573,
+        "ci_low": -2.648927707408777,
+        "ci_high": 1.0015605497642381,
+        "crosses_zero": true
+      }
+    },
+    {
+      "seed": 43,
+      "n_dishes": 507,
+      "calories": {
+        "rgb_mae": 61.46096408461208,
+        "nir_mae": 60.98470587114375,
+        "delta_mean_nir_minus_rgb": -0.47625821346832214,
+        "ci_low": -3.3752967290859486,
+        "ci_high": 2.426022037716777,
+        "crosses_zero": true
+      },
+      "mass": {
+        "rgb_mae": 39.09262726010655,
+        "nir_mae": 37.36092465492865,
+        "delta_mean_nir_minus_rgb": -1.7317026051779,
+        "ci_low": -4.060400532077285,
+        "ci_high": 0.5836187960833488,
+        "crosses_zero": true
+      }
+    },
+    {
+      "seed": 44,
+      "n_dishes": 507,
+      "calories": {
+        "rgb_mae": 57.62503092082059,
+        "nir_mae": 57.61315438239532,
+        "delta_mean_nir_minus_rgb": -0.011876538425272504,
+        "ci_low": -2.4721827770361062,
+        "ci_high": 2.517589430837236,
+        "crosses_zero": true
+      },
+      "mass": {
+        "rgb_mae": 36.134845575637364,
+        "nir_mae": 36.722275216668784,
+        "delta_mean_nir_minus_rgb": 0.5874296410314195,
+        "ci_low": -1.0892166649331239,
+        "ci_high": 2.296380443685859,
+        "crosses_zero": true
+      }
+    }
+  ],
+  "calories": {
+    "mean_delta": -0.7425135440688474,
+    "min_delta": -1.7394058803129477,
+    "max_delta": -0.011876538425272504,
+    "all_same_sign": true,
+    "all_ci_cross_zero": true
+  },
+  "mass": {
+    "mean_delta": -0.653955031977446,
+    "min_delta": -1.7317026051779,
+    "max_delta": 0.5874296410314195,
+    "all_same_sign": false,
+    "all_ci_cross_zero": true
+  },
+  "verdict": "direction is consistently non-positive for calories (3/3 seeds favour NIR) but every paired CI still crosses zero and the magnitude is at the ~1 kcal run-to-run noise floor -> still NOT a significant gain; do not claim a stable NIR benefit",
+  "noise_floor_kcal": 1.0
+}

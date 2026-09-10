@@ -1,5 +1,5 @@
 /* pages/result/result.wxss - 识别与确认 */
-.container { padding: 24rpx; background: #faf7f4; min-height: 100vh; }
+.container { padding: 24rpx 24rpx calc(48rpx + env(safe-area-inset-bottom)); background: #faf7f4; min-height: 100vh; box-sizing: border-box; }
 .card { background: #fff; border-radius: 20rpx; padding: 32rpx; margin-bottom: 24rpx; box-shadow: 0 4rpx 16rpx rgba(74,58,41,.06); }
 .photo-card { padding: 16rpx; }
 .result-image { width: 100%; height: 420rpx; border-radius: 14rpx; background: #f1ece7; }
@@ -8,20 +8,16 @@
 .card-title { font-size: 32rpx; font-weight: 700; color: #2a2e31; margin-bottom: 8rpx; }
 
 .cat-row { display: flex; flex-direction: column; gap: 12rpx; }
-.cat-chip { align-self: flex-start; padding: 8rpx 24rpx; border-radius: 999rpx; background: #eef4ef; color: #1f7a4d; font-size: 26rpx; font-weight: 600; }
-.est-line { font-size: 28rpx; color: #6b7280; }
-.est-line .big { font-size: 44rpx; font-weight: 800; color: #1f7a4d; margin: 0 6rpx; }
+.model-chip { align-self: flex-start; padding: 8rpx 20rpx; border-radius: 999rpx; background: #eef4ef; color: #1f7a4d; font-size: 24rpx; font-weight: 600; }
+/* 类别来源说明：一行小字，紧跟类别标签，不占视觉重点 */
+.cat-note { font-size: 22rpx; color: #9aa0a6; line-height: 1.5; }
+.estimate-grid { display: flex; gap: 16rpx; }
+.estimate-item { flex: 1; min-width: 0; padding: 18rpx; background: #faf7f4; border-radius: 14rpx; }
+.estimate-label { display: block; font-size: 23rpx; color: #6b7280; margin-bottom: 4rpx; }
+.big { font-size: 42rpx; font-weight: 800; color: #1f7a4d; }
+.unit { margin-left: 6rpx; font-size: 22rpx; color: #6b7280; }
 
-/* 多类别置信度 */
-.probs { margin-top: 12rpx; }
-.prob { display: flex; align-items: center; gap: 16rpx; padding: 10rpx 0; }
-.prob-name { width: 140rpx; font-size: 26rpx; color: #4a4e52; }
-.prob-track { flex: 1; height: 12rpx; border-radius: 999rpx; background: #f0ece7; overflow: hidden; }
-.prob-fill { height: 100%; border-radius: 999rpx; background: #1f7a4d; }
-.prob-pct { width: 80rpx; text-align: right; font-size: 24rpx; color: #1f7a4d; font-weight: 600; }
 .prob-note { font-size: 22rpx; color: #9aa0a6; margin-top: 8rpx; line-height: 1.5; }
-.prob-head { font-size: 24rpx; color: #4a4e52; margin-bottom: 8rpx; }
-.hl { color: #e8833a; font-weight: 600; }
 
 .prompt { font-size: 24rpx; color: #6b7280; margin: 20rpx 0 8rpx; padding: 16rpx 20rpx; background: #faf4ec; border-radius: 12rpx; }
 
@@ -30,7 +26,10 @@
 .macros-label { font-size: 24rpx; color: #6b7280; }
 .macros-value { font-size: 26rpx; color: #9aa0a6; margin-top: 6rpx; }
 .macros-value.warn { color: #e8833a; }
-.macro-item { font-size: 26rpx; color: #4a4e52; margin-top: 6rpx; }
+.macro-grid { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 10rpx; }
+.macro-item { flex: 1 1 150rpx; min-width: 0; padding: 12rpx 8rpx; text-align: center; background: #fff; border-radius: 10rpx; }
+.macro-name { display: block; font-size: 22rpx; color: #6b7280; }
+.macro-number { display: block; margin-top: 2rpx; font-size: 24rpx; color: #2a2e31; font-weight: 600; overflow-wrap: anywhere; }
 
 .btn-primary { display: flex; align-items: center; justify-content: center; height: 92rpx; border-radius: 999rpx; background: #1f7a4d; color: #fff; font-size: 30rpx; font-weight: 600; box-shadow: 0 10rpx 20rpx rgba(31,122,77,.2); margin-top: 20rpx; }
 .btn-primary:active { background: #185f3b; }
@@ -44,10 +43,18 @@
 .input { height: 80rpx; padding: 0 20rpx; background: #faf7f4; border-radius: 14rpx; font-size: 28rpx; line-height: 80rpx; margin-bottom: 12rpx; }
 .note { font-size: 22rpx; color: #9aa0a6; line-height: 1.5; margin: 8rpx 0; }
 
-.grade-block { margin-top: 24rpx; }
+.grade-block { margin-top: 24rpx; padding-top: 20rpx; border-top: 1rpx solid #f0ece7; }
 .section-sub { font-size: 28rpx; color: #4a4e52; margin-bottom: 12rpx; }
 .grade-row { display: flex; gap: 16rpx; }
-.grade-btn { flex: 1; height: 76rpx; line-height: 76rpx; text-align: center; border-radius: 999rpx; background: #f4f0eb; color: #4a4e52; font-size: 26rpx; border: 2rpx solid transparent; }
+/* 按钮文字居中：用 flex 居中并清掉小程序 button 的默认内边距与 ::after 边框，
+   只写 height+line-height 会因组件默认样式导致文字偏下 */
+.grade-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  height: 76rpx; padding: 0; margin: 0; line-height: 1;
+  border-radius: 999rpx; background: #f4f0eb; color: #4a4e52; font-size: 26rpx;
+  border: 2rpx solid transparent; box-sizing: border-box;
+}
+.grade-btn::after { border: none; }
 .grade-on { background: #eef4ef; color: #1f7a4d; border-color: #b9d6c4; }
 .grade-hint { font-size: 22rpx; color: #9aa0a6; text-align: center; margin-top: 8rpx; }
 
@@ -72,3 +79,9 @@
 .ann-note { font-size: 22rpx; color: #9aa0a6; text-align: center; margin-top: 12rpx; line-height: 1.5; }
 
 .disclaimer { font-size: 22rpx; color: #9aa0a6; text-align: center; padding: 12rpx 24rpx; line-height: 1.6; }
+
+@media (max-width: 360px) {
+  .card { padding: 24rpx; }
+  .estimate-grid { flex-direction: column; }
+  .macro-item { flex-basis: 100%; }
+}

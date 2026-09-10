@@ -1,1 +1,4 @@
 /* pages/about/about.wxss */
+.label { margin-top: 24rpx; font-weight: 600; color: #4a4e52; }
+.body-list { margin-top: 10rpx; color: #626c68; font-size: 26rpx; line-height: 1.75; }
+.btn-primary { margin-top: 28rpx; }

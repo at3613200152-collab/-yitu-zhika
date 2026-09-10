@@ -1,6 +1,4 @@
 <view class="container">
-  <view class="page-title">我的</view>
-
   <!-- 记录足迹（温和激励，非打卡惩罚） -->
   <view class="hero card">
     <view class="hero-left">

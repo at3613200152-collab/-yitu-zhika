@@ -25,7 +25,7 @@
       <view class="meal-info">
         <view class="meal-name">{{item.result.category_name || '餐食'}}</view>
         <view class="meal-time">{{item.timestamp}}</view>
-        <view class="meal-est">估算 {{item.result.calories}} kcal · {{item.result.weight}} g</view>
+        <view class="meal-est">估算 {{item.displayCalories}} kcal · {{item.displayWeight}} g</view>
       </view>
       <text class="meal-edit">修改 ›</text>
     </view>
@@ -40,7 +40,7 @@
 
   <!-- 空状态：友好引导，不显示失败 -->
   <view class="empty" wx:else>
-    <view class="empty-emoji">🥣</view>
+    <image class="empty-icon" src="/assets/tabbar/ui-camera.png" mode="aspectFit"></image>
     <view class="empty-text">从记录这一餐开始</view>
     <view class="empty-hint">拍张照，帮你估算一份参考；也可以先从相册选一张。</view>
   </view>

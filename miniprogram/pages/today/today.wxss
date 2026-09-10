@@ -1,5 +1,5 @@
 /* pages/today/today.wxss */
-.container { padding: 32rpx 28rpx 48rpx; background: #faf7f4; min-height: 100vh; }
+.container { padding: 32rpx 28rpx calc(48rpx + env(safe-area-inset-bottom)); background: #faf7f4; min-height: 100vh; box-sizing: border-box; }
 
 .hero { margin-top: 8rpx; }
 .hero-title { font-size: 44rpx; font-weight: 700; color: #2a2e31; }
@@ -29,7 +29,7 @@
 
 /* 空状态 */
 .empty { text-align: center; padding: 80rpx 32rpx; }
-.empty-emoji { font-size: 88rpx; }
+.empty-icon { width: 84rpx; height: 84rpx; opacity: .55; }
 .empty-text { font-size: 32rpx; font-weight: 600; color: #2a2e31; margin-top: 20rpx; }
 .empty-hint { font-size: 26rpx; color: #6b7280; margin-top: 12rpx; line-height: 1.6; }
 

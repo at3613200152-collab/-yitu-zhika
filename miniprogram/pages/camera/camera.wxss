@@ -21,9 +21,17 @@
   border: 2rpx dashed #ccc;
   border-radius: 12rpx;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   margin: 20rpx 0;
+}
+.placeholder-icon {
+  width: 88rpx;
+  height: 88rpx;
+  opacity: .55;
+  margin-bottom: 18rpx;
 }
 .placeholder-text {
   color: #999;
@@ -31,13 +39,15 @@
 }
 .btn-row {
   display: flex;
-  justify-content: space-around;
+  align-items: stretch;
   width: 100%;
   gap: 16rpx;
 }
-.btn-row .btn-primary {
+.btn-row .btn-primary,
+.btn-row .btn-secondary {
   flex: 1;
-  margin: 8rpx;
+  width: 0;
+  margin: 8rpx 0;
 }
 .submit-btn {
   margin-top: 32rpx;

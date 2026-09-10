@@ -1,6 +1,11 @@
 // pages/history/history.js - 历史记录列表（含打卡摘要）
 const app = getApp()
 
+function displayNumber(value) {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.round(n * 10) / 10 : '-'
+}
+
 function keyOf(date) {
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const dd = String(date.getDate()).padStart(2, '0')
@@ -18,7 +23,12 @@ Page({
   },
 
   onShow() {
-    this.setData({ history: app.globalData.history })
+    const history = (app.globalData.history || []).map(item => ({
+      ...item,
+      displayCalories: displayNumber(item.result && item.result.calories),
+      displayWeight: displayNumber(item.result && item.result.weight)
+    }))
+    this.setData({ history })
     this.computeSummary()
   },
 

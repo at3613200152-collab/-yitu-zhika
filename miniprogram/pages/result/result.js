@@ -40,6 +40,12 @@ function categoryIdFromResult(res) {
   return null
 }
 
+function displayNumber(value) {
+  if (value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.round(n * 10) / 10 : null
+}
+
 function uuid() {
   const t = Date.now(), r = Math.floor(Math.random() * 0x100000000), r2 = Math.floor(Math.random() * 0x100000000)
   const hex = (n, l) => n.toString(16).padStart(l, '0')
@@ -56,9 +62,8 @@ function participantId() {
 Page({
   data: {
     record: null,
-    categories: CATEGORY_IDS.map(id => CATEGORY_ZH[id]),
-    categoryIndex: -1,
-    editCalories: '', editWeight: '', editCategory: '',
+    displayNutrition: {},
+    editCalories: '', editWeight: '',
     userGrade: '', showManual: false,
     confirmed: false, celebrating: false, loading: false,
     // 内测：训练授权（默认不勾选）+ 自愿标注
@@ -75,17 +80,20 @@ Page({
       return
     }
     if (!record.capture_session_id) record.capture_session_id = uuid()
-    const catId = categoryIdFromResult(record.result)
-    const categoryIndex = catId ? CATEGORY_IDS.indexOf(catId) : -1
     this.setData({
       record,
+      displayNutrition: {
+        calories: displayNumber(record.result.calories),
+        weight: displayNumber(record.result.weight),
+        protein: displayNumber(record.result.protein_g),
+        carbohydrate: displayNumber(record.result.carbohydrate_g),
+        fat: displayNumber(record.result.fat_g)
+      },
       editCalories: String(Math.round(record.result.calories || 0)),
       editWeight: String(Math.round(record.result.weight || 0)),
-      editCategory: categoryIndex >= 0 ? CATEGORY_ZH[CATEGORY_IDS[categoryIndex]] : (record.result.category_name || ''),
-      categoryIndex,
       // 决策 C：类别来自独立类别模型（12 类，含水果），热量/宏量来自五目标模型
       categorySourceNote: record.result.category_label_schema === 'v2_fruit_12class'
-        ? '类别含"水果"（12 类标签体系），来自独立类别模型；热量与宏量来自五目标模型。'
+        ? '类别建议来自独立的 12 类模型；热量与宏量来自五目标模型。'
         : '',
       confirmed: !!record.feedbackSubmitted,
       consent: !!wx.getStorageSync('training_consent'),   // 尊重用户在"我的"里的全局授权设置
@@ -152,13 +160,8 @@ Page({
   toggleManual() { this.setData({ showManual: !this.data.showManual }) },
   onCaloriesInput(e) { this.setData({ editCalories: e.detail.value }) },
   onWeightInput(e) { this.setData({ editWeight: e.detail.value }) },
-  onCategoryChange(e) {
-    const idx = parseInt(e.detail.value)
-    if (idx >= 0 && idx < CATEGORY_IDS.length) this.setData({ categoryIndex: idx, editCategory: CATEGORY_ZH[CATEGORY_IDS[idx]] })
-  },
   submitManual() {
     const r = this.data.record
-    const catId = this.data.categoryIndex >= 0 ? CATEGORY_IDS[this.data.categoryIndex] : null
     this.recordPost('/record', {
       dish_uuid: r.dish_uuid || r.id,
       image_hash: r.image_hash || null,
@@ -174,7 +177,6 @@ Page({
       quality: 'manual_typed',
       corrected_calories: parseFloat(this.data.editCalories) || null,
       corrected_weight: parseFloat(this.data.editWeight) || null,
-      corrected_category: catId,
       mass_basis: 'as_served',
       training_consent: !!this.data.consent,
       consent_version: this.data.consentVersion
@@ -194,20 +196,18 @@ Page({
           r.grade = payload.user_grade || 'ok'
           r.feedbackQuality = payload.quality
           r.feedbackSubmitted = true
-          if (payload.corrected_calories != null) r.result.calories = payload.corrected_calories
-          if (payload.corrected_weight != null) r.result.weight = payload.corrected_weight
-          if (payload.corrected_category && CATEGORY_ZH[payload.corrected_category]) { r.result.category_name = CATEGORY_ZH[payload.corrected_category]; r.result.category_id = payload.corrected_category }
+          this.applyCorrections(r, payload)
           app.saveHistory(r)
           this.setData({ confirmed: true, showManual: false, celebrating: true })
           wx.showToast({ title: url === '/record' ? '已记录这一餐' : '已保存', icon: 'success' })
           setTimeout(() => wx.navigateBack(), 900)
         } else {
-          this.saveLocalOnly(r)
+          this.saveLocalOnly(r, payload)
           wx.showToast({ title: '已保存到本地', icon: 'none' })
         }
       },
       fail: () => {
-        this.saveLocalOnly(r)
+        this.saveLocalOnly(r, payload)
         wx.showModal({ title: '网络不可用', content: '未上传成功，已保存到本地。', showCancel: false })
         setTimeout(() => wx.navigateBack(), 600)
       },
@@ -215,7 +215,18 @@ Page({
     })
   },
 
-  saveLocalOnly(r) {
+  applyCorrections(r, payload) {
+    if (!r || !payload) return
+    if (payload.corrected_calories != null) r.result.calories = payload.corrected_calories
+    if (payload.corrected_weight != null) r.result.weight = payload.corrected_weight
+    if (Array.isArray(payload.corrected_categories)) {
+      r.result.confirmed_category_ids = payload.corrected_categories.slice()
+      r.result.confirmed_category_names = payload.corrected_categories.map(id => CATEGORY_ZH[id]).filter(Boolean)
+    }
+  },
+
+  saveLocalOnly(r, payload) {
+    this.applyCorrections(r, payload)
     r.feedbackSubmitted = true
     r.savedLocal = true
     app.saveHistory(r)

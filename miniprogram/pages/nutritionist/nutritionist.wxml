@@ -1,6 +1,4 @@
 <view class="container">
-  <view class="page-title">饮食计划</view>
-
   <!-- 输入表单 -->
   <view class="card" wx:if="{{!plan}}">
     <view class="subtitle">填几项基本信息，为你生成一周饮食参考。这是可调整的建议，不是必须执行的菜单。</view>

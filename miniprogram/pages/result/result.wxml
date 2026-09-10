@@ -10,9 +10,18 @@
     <view class="card-title">这一餐</view>
 
     <view class="cat-row">
-      <view class="cat-chip">{{record.result.category_name || '未知类别'}}</view>
-      <view class="est-line">估算热量 <text class="big">{{record.result.calories}}</text> kcal</view>
-      <view class="est-line">估算份量 <text class="big">{{record.result.weight}}</text> g</view>
+      <view class="model-chip">模型首选：{{record.result.category_name || '未知类别'}}</view>
+      <view class="cat-note" wx:if="{{categorySourceNote}}">{{categorySourceNote}}</view>
+      <view class="estimate-grid">
+        <view class="estimate-item">
+          <text class="estimate-label">估算热量</text>
+          <view><text class="big">{{displayNutrition.calories}}</text><text class="unit">kcal</text></view>
+        </view>
+        <view class="estimate-item">
+          <text class="estimate-label">估算份量</text>
+          <view><text class="big">{{displayNutrition.weight}}</text><text class="unit">g</text></view>
+        </view>
+      </view>
     </view>
 
     <!-- 三大营养素（当前模型不输出 → 待补充，不显示 0） -->
@@ -22,23 +31,13 @@
     </view>
     <view class="macros" wx:elif="{{record.result.protein_g !== undefined && record.result.protein_g !== null}}">
       <view class="macros-label">宏量营养（估算）</view>
-      <view class="macro-item">蛋白质 {{abnormalProtein ? '异常/待确认' : record.result.protein_g + ' g'}}</view>
-      <view class="macro-item">碳水 {{abnormalCarb ? '异常/待确认' : record.result.carbohydrate_g + ' g'}}</view>
-      <view class="macro-item">脂肪 {{abnormalFat ? '异常/待确认' : record.result.fat_g + ' g'}}</view>
+      <view class="macro-grid">
+        <view class="macro-item"><text class="macro-name">蛋白质</text><text class="macro-number">{{abnormalProtein ? '异常/待确认' : displayNutrition.protein + ' g'}}</text></view>
+        <view class="macro-item"><text class="macro-name">碳水</text><text class="macro-number">{{abnormalCarb ? '异常/待确认' : displayNutrition.carbohydrate + ' g'}}</text></view>
+        <view class="macro-item"><text class="macro-name">脂肪</text><text class="macro-number">{{abnormalFat ? '异常/待确认' : displayNutrition.fat + ' g'}}</text></view>
+      </view>
       <view class="macro-item" wx:if="{{abnormalKcal}}">热量（异常/待确认）</view>
       <view class="macros-value warn" wx:if="{{valuesNote}}">{{valuesNote}}</view>
-    </view>
-
-    <!-- 多类别置信度（不作为"准确率"） -->
-    <view class="probs" wx:if="{{record.result.category_probs && record.result.category_probs.length > 1}}">
-      <view class="prob-head">模型最可能的大类（单标签，非各食材占比）</view>
-      <view class="prob" wx:for="{{record.result.category_probs}}" wx:for-item="c" wx:key="idx" wx:if="{{c.pct >= 1}}">
-        <text class="prob-name">{{c.name}}</text>
-        <view class="prob-track"><view class="prob-fill" style="width: {{c.pct}}%;"></view></view>
-        <text class="prob-pct">{{c.pct}}%</text>
-      </view>
-      <view class="prob-note">模型是单标签分类，会把最高置信度的大类压到接近 100%、其它接近 0%——<text class="hl">不代表这餐只有蔬菜</text>；这餐可能同时含蛋类/谷物等，本栏无法判断各食材占比。</view>
-      <view class="prob-note" wx:if="{{categorySourceNote}}">{{categorySourceNote}}</view>
     </view>
 
     <view class="prompt">照片通常难以判断实际份量和用油量，你可以补充信息。</view>
@@ -56,16 +55,12 @@
 
     <!-- 次要操作：修改 / 重新选择 -->
     <view class="secondary-row">
-      <text class="link" bindtap="toggleManual">{{showManual ? '收起修改' : '修改份量/类别'}}</text>
+      <text class="link" bindtap="toggleManual">{{showManual ? '收起修改' : '修改热量/份量'}}</text>
       <text class="link" bindtap="repick">重新选择照片</text>
     </view>
 
     <!-- 手动修正表单 -->
     <view class="manual-form" wx:if="{{showManual}}">
-      <view class="label">类别</view>
-      <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-        <view class="input">{{editCategory || '请选择'}}</view>
-      </picker>
       <view class="label">实际热量 (kcal)</view>
       <input class="input" type="digit" value="{{editCalories}}" bindinput="onCaloriesInput" placeholder="如：250" />
       <view class="label">实际重量 (g)</view>
@@ -102,7 +97,7 @@
 
   <!-- 完成反馈 -->
   <view class="celebrate" wx:if="{{celebrating}}">
-    🎉 已记录这一餐，坚持记录是了解自己饮食的第一步。
+    已记录这一餐，坚持记录是了解自己饮食的第一步。
   </view>
 
   <view class="disclaimer">

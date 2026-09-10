@@ -1,113 +1,156 @@
-# 一图知卡 — 基于近红外光谱的实时食物热量分析
+# 一图知卡 — 多光谱食物识别与卡路里估计
 
-> RGB -> NIR 生成 + 多任务营养估计的端到端食物热量分析平台
+> 课程设计：复现 *Multi-Spectral Food Classification and Caloric Estimation Using Predicted Images*（Foods 2024, 13(4):551）
+> 两阶段流水线 —— **RGB→NIR 预测图像生成** + **RGB/NIR 多通道多任务营养估计**，并落到可演示的微信小程序 + Flask 服务。
 
-## 项目概述
+## 当前状态（2026-09-10 审计）
 
-两阶段框架：
-1. **Phase1**: RGB->NIR 生成器 — 7层Deep U-Net + PatchGAN判别器
-2. **Phase2**: RGB+NIR 4通道多任务ResNet50 — 同时预测食物类别、卡路里、重量
+| 项 | 结论 |
+|----|------|
+| 阶段一 生成器 | 全量数据三种子 **PSNR 26.674 dB / SSIM 0.9084**（跨种子极差 0.116 dB / 0.0015）；小数据版 22.84 dB / 0.837 |
+| 阶段二 多通道 | 同一冻结 507 测试集、同骨干同预算，唯一差异是第 4 通道（预测 NIR）：热量 MAE 56.55 → 56.21 kcal，**配对 bootstrap 置信区间跨零 → 未观察到稳定增益** |
+| 消融 | 换成全量生成器复核（ms3）后方向一致偏 NIR（3/3 种子 Δ ≤ 0，均值 −0.74 kcal），但 CI 仍全部跨零、幅度处于 ~1 kcal 噪声底 → 仍不显著 |
+| 在线系统 | 微信小程序 + Flask；热量/宏量用 `v1_expanded`（热量 MAE 58.50 kcal），类别用 `v3_corrected_seed42`（12 类，准确率 69.03%），两者解耦 |
 
-## 模块导航
+> 复核脚本：`python yitu-zhika-code/scripts/analyze_ms3.py`（输出逐种子 Δ 与配对 CI）。
 
-### 核心引擎 (engineering)
+## 复现内容与口径
 
-| 模块 | 描述 | 文档 |
+- **阶段一**：HSIFoodIngr-64 上训练 RGB→NIR 生成器，用 PSNR / SSIM 评估。
+  860 nm 单波段为目标；缩放只用训练集统计的固定值（low=0.17514 / high=1.67553）；原生 HSI 顺时针 90° 对齐 RGB。
+- **阶段二**：Nutrition5k 上把 RGB 与预测 NIR 拼成 4 通道，ResNet50 多任务 —— 分类（CE）+ 热量/重量（掩码归一化 L1），并在其之上扩展到五个目标（+蛋白/碳水/脂肪）。
+- **两条复现路径**：我方（4 层 U-Net + L1，先小数据跑通协议再扩到全量 2772 样本）；队友（6 层 U-Net + PatchGAN，直接全量）。
+  两套实现各自完整、互为对照 —— 队友那版因 NIR 与 RGB 差 90° 未对齐，只有 14.25 dB / 0.622，
+  这也正是本项目最重要的**数据锚点**证据（对齐后相关系数 0.99965）。
+
+## 代码与文档
+
+全部代码在 [`yitu-zhika-code/`](yitu-zhika-code/)，其 [README](yitu-zhika-code/README.md) 是详细入口。
+
+| 模块 | 说明 | 入口 |
 |------|------|------|
-| [app/](app/) | Gradio Web应用 + 推理管线 | [README](app/README.md) |
-| [models/generator/](models/generator/) | NIR生成器 (7层/4层U-Net + PatchGAN) | [README](models/generator/README.md) |
-| [models/multitask/](models/multitask/) | 多任务营养估计网络 (ResNet50 4ch) | [README](models/multitask/README.md) |
-| [data/](data/) | 数据加载器 (Nutrition5k + HSIFoodIngr) | [README](data/README.md) |
-| [training/](training/) | 训练脚本 (Phase1 GAN + Phase2 多任务) | [README](training/README.md) |
-| [evaluation/](evaluation/) | 评估工具 (PSNR/SSIM/MAE/MAPE) | [README](evaluation/README.md) |
-| [configs/](configs/) | 超参数配置 | [README](configs/README.md) |
-
-### 用户工具 (productivity)
-
-| 模块 | 描述 | 文档 |
-|------|------|------|
-| [recipe/](recipe/) | TDEE计算 + 食谱推荐 + 食物数据库 | [README](recipe/README.md) |
-
-### 实验性功能 (in-progress)
-
-| 模块 | 描述 | 文档 |
-|------|------|------|
-| [optimizations/](optimizations/) | 注意力机制/多波段/分割等实验方案 | [README](optimizations/README.md) |
-
-## 快速开始
-
-### 环境要求
-- Python 3.11+
-- PyTorch 2.x + CUDA
-- GPU: 8GB+ VRAM (训练), CPU也可推理
-
-### 安装
-```bash
-pip install -r requirements.txt
-```
-
-### 启动应用
-```bash
-# 确保checkpoint文件在以下位置:
-#   checkpoints/phase1/final_model.pth  (NIR生成器)
-#   checkpoints/multitask/best_model.pt (多任务网络)
-python app/gradio_demo.py
-# 访问 http://localhost:7860
-```
-
-### 训练
-```bash
-# Phase1: RGB->NIR 生成器
-python training/train_generator.py --epochs 200 --batch_size 8
-
-# Phase2: 多任务营养估计
-python training/train_multitask.py --config configs/default.yaml
-```
-
-## 模型架构
-
-### Phase1: NIR生成器
-- **nir_generator.py**: 7层Deep U-Net (46.9M参数), 编码器256->2, 解码器1->256
-- **generator_v1.py**: 4层U-Net (早期版本, checkpoint兼容)
-- **discriminator.py**: 70x70 PatchGAN条件判别器 (2.8M参数)
-- 输入: RGB [B,3,256,256] -> 输出: NIR [B,1,256,256]
-
-### Phase2: 多任务网络
-- **resnet_multitask.py**: ResNet50改编, 4通道输入 (RGB+NIR)
-- 输出: 61类食物分类 + 卡路里回归 + 重量回归
+| 在线服务 | Flask 推理编排、数据采集、商家与登录 | [`yitu-zhika-code/app/inference_service.py`](yitu-zhika-code/app/inference_service.py) |
+| 小程序 | 拍照→结果→修正→历史；饮食计划与 TDEE | [`yitu-zhika-code/miniprogram/`](yitu-zhika-code/miniprogram/) |
+| 模型 | 生成器（U-Net）、多任务 ResNet50、宏量网络 | [`yitu-zhika-code/src/models/`](yitu-zhika-code/src/models/) |
+| 训练 | 阶段一/阶段二训练与消融 | [`yitu-zhika-code/src/training/`](yitu-zhika-code/src/training/) |
+| 评估与统计 | PSNR/SSIM、MAPE/R²、配对 bootstrap | [`yitu-zhika-code/src/evaluation/`](yitu-zhika-code/src/evaluation/) |
+| 实验脚本 | 数据集构建、ms2/ms3 对照、锚点量化 | [`yitu-zhika-code/scripts/`](yitu-zhika-code/scripts/) |
+| 报告材料 | 数据包（13 节）、论文对比、各阶段结论 | [`yitu-zhika-code/docs/`](yitu-zhika-code/docs/) |
+| 答辩 PPT | 18 页 + 备注 + 配图 | [`yitu-zhika-code/artifacts/一图知卡_课程设计答辩_2026-09-11.pptx`](yitu-zhika-code/artifacts/) |
 
 ## 当前性能
 
-| 指标 | Phase1 (NIR生成) | Phase2 (营养估计) | 论文参考 |
-|------|------------------|-------------------|----------|
-| PSNR | 19.29 dB | — | 30.61 dB |
-| SSIM | 0.799 | — | 0.865 |
-| 卡路里MAPE | — | 16.97% | 12.13% |
-| 重量MAPE | — | 29.92% | — |
-| R2 (卡路里) | — | 0.940 | — |
-| R2 (重量) | — | 0.904 | — |
+### 阶段一：RGB→NIR 生成器（同口径对照）
+
+| 版本 | 训练样本 | PSNR | SSIM |
+|------|----------|------|------|
+| 路径 A 小数据 | 93 | 22.84 dB | 0.837 |
+| 路径 A 全量（三种子均值） | 2772 | **26.67 dB** | **0.9084** |
+| 路径 B 队友（朝向错位） | 2772 | 14.25 dB | 0.622 |
+| 论文报告（**口径不同**，未作直接比较） | — | 30.61 dB | 0.865 |
+
+> 口径：小数据模型与全量模型都在**同一批 327 张全量 test** 上评估（小数据模型在自己 33 张测试集上另有 23.33 dB / 0.812），
+> 因此上表前两行可直接比较 —— 这正是「+3.8 dB」的出处。
+
+数据量从 144 扩到 2772（步数 1150 → 9700）只换来 +3.8 dB —— 因为 PSNR 是对数度量，+3.8 dB 相当于 MSE 降到约 41.6%。
+真正决定「能不能学到」的是**锚点**（朝向/波段/缩放/配对划分），而不是数据量：
+
+| 锚点单因素消融（seed 42，结构/损失/轮数/种子完全一致） | PSNR | SSIM | Δ |
+|--------------------------------------------------------|------|------|---|
+| 基线 `full_seed42`（固定缩放 + 朝向对齐） | 26.654 dB | 0.9093 | — |
+| 目标 NIR 旋转 90°（`--extra-rot 1`） | 18.928 dB | 0.7160 | **−7.73 dB / −0.193** |
+| 逐图百分位归一化替代训练集固定缩放（`--target-norm per_image`） | 21.062 dB | 0.8373 | **−5.59 dB / −0.072** |
+
+两次落差分别是跨种子极差（0.116 dB）的 **67 倍 / 48 倍**，判定不受运行噪声干扰。
+队友那版的 14.25 dB 是「朝向错位 + 不同结构/损失/轮数」的混合结果，不能当作单因素结论引用。
+
+> 评测口径：PSNR = `10·log10(4/MSE)`（值域 `[-1,1]`，逐图平均，与训练日志同口径）；SSIM 用 11×11 高斯窗。
+
+### 阶段二：多通道多任务（Nutrition5k，冻结 507 测试集）
+
+| 模型 | 热量 MAE | 热量 RMSE | R² | 非零 MAPE (n=506) | 重量 MAE | 粗分类准确率 |
+|------|----------|-----------|----|-------------------|----------|--------------|
+| RGB（内部对照） | 56.55 kcal | 85.13 | 0.8388 | 48.07% | 36.70 g | 72.78% |
+| RGB + 预测 NIR（小数据生成器） | 56.21 kcal | 84.90 | 0.8397 | 51.02% | 35.64 g | 73.18% |
+| CalorieCLIP 基线（纯 RGB 开源） | 58.74 kcal | 91.29 | 0.8146 | 35.36% | 不支持 | 不支持 |
+
+- 三种子逐餐盘配对 bootstrap（10000 次重采样）：热量 Δ = +2.32 / −2.98 / +3.19 kcal，**符号翻转且 CI 全跨零**。
+- 换成全量生成器（ms3）：Δ = −1.74 / −0.48 / −0.01 kcal（均值 −0.74）—— 方向一致偏 NIR，但 **CI 仍全跨零**。
+- 运行间噪声底实测约 **1 kcal**，与待测效应同量级 → 不为此增加部署复杂度。
+
+### 五目标在线模型（冻结 507 测试集，MAE）
+
+| 模型 | 热量 | 重量 | 蛋白 | 碳水 | 脂肪 | 粗分类 |
+|------|------|------|------|------|------|--------|
+| `v1_expanded`（在线回归/宏量，11 类） | 58.50 kcal | 36.14 g | 5.71 g | 6.10 g | 4.32 g | 73.77% |
+| `v3_corrected_seed42`（在线类别，12 类） | 60.16 kcal | 37.63 g | 5.68 g | 6.16 g | 4.44 g | 69.03% |
+
+12 类标签体系（新增「水果」）让水果类 P 0.809 / R 0.867 / F1 0.837，但同配方热量 MAE 上升约 1.9 kcal → **类别与回归解耦**。
+
+### 消融实验
+
+**阶段二（冻结 507 测试集）**
+
+| 实验 | 内容 | 结果 | 是否采用 |
+|------|------|------|----------|
+| B | 非负输出（softplus 参数化） | 负预测清零（0/0/0/0/0），但热量 MAE +4.5 kcal、重量 +8.4 g | **不上线** |
+| C | 类别加权 CE | 平衡召回 0.5150 → 0.5384，Macro-F1 0.5283 → 0.5371，总体准确率 0.7357 → 0.7318（略降） | 可选开关，**非默认** |
+| — | RGB vs RGB+NIR × 3 种子 | 逐餐盘配对 bootstrap，CI 全跨零（详见上表） | **不为 NIR 增加部署复杂度** |
+
+**阶段一（生成器锚点，单因素）**
+
+| 实验 | 内容 | 结果 |
+|------|------|------|
+| A1 | RGB 分支是否被改动 | 144 张扫描上逐像素平均绝对差**恰为 0.0000** → NIR 实验不污染 RGB 对照 |
+| A2 | NIR 目标朝向 | 旋转 90° 使 PSNR −7.73 dB（26.654 → 18.928）、SSIM −0.193 |
+| A3 | NIR 目标归一化 | 逐图归一化使 PSNR −5.59 dB（→ 21.062）、SSIM −0.072 |
+
+分类必须同时报 Macro-F1、平衡召回与逐类支持度：冻结测试划分中 `soup_stew`、`sauce_condiment` 测试样本为 0，
+`dessert` 验证样本为 0，因此 **Macro-F1 只在 9 个受支持类别上报告** —— 只报准确率会得出相反结论。
 
 ## 技术栈
 
-- PyTorch 2.7.1 + CUDA 12.8
-- Gradio (Web界面)
-- torchvision (ResNet50骨干)
-- numpy, PIL (图像处理)
+- Python 3.11 + PyTorch 2.x + CUDA，NVIDIA RTX 5060 Laptop (8GB)
+- 在线服务：**Flask**（`app/inference_service.py`）+ **微信小程序**（`miniprogram/`）；Gradio 仅作历史内部 Demo，不是产品入口
+- 数据采集与记录：SQLite（`data/collection_v1.sqlite3`）
+- 训练/评估：`src/training/`、`src/evaluation/`；实验与统计脚本：`scripts/`
 
 ## 数据集
 
-- **nirscene1**: 真实近红外RGB-NIR配对图像 (2597 train + 320 test)
-- **Nutrition5k**: 食物营养标注数据 (Phase2训练)
-- **HSIFoodIngr-64**: 高光谱食材数据 (辅助训练)
+| 数据集 | 用途 | 规模 |
+|--------|------|------|
+| HSIFoodIngr-64 | 阶段一 RGB→NIR 生成器 | 小数据协议 144 对（train 93 / val 18 / test 33）；全量 3389 对 = 2772 / 290 / **327**（`data/hsi_full_v3/`） |
+| Nutrition5k | 阶段二多任务训练与评估 | 2188 train / 567 val / **507 冻结 test** |
+| FoodData Central | 食谱推荐的营养库 | 随 `food_calorie_estimation/` 提供 |
+
+> 目标统计量（均值/标准差）**只用训练集**计算并写入数据清单；未知标签 mask=0 不参与损失，真实 0 保留。
 
 ## 项目路线
 
-- [x] Phase1 生成器训练 (4层U-Net, 200 epochs)
-- [x] Phase2 多任务训练 (100 epochs)
-- [x] 端到端推理管线
-- [x] Gradio Web界面
-- [x] 食谱推荐系统
-- [ ] Phase1 重训 (7层Deep U-Net, 进行中)
-- [ ] 分类标签完善 (当前category=unknown)
-- [ ] 消融实验
-- [ ] 双路径改造
+- [x] 阶段一 生成器训练与评估（小数据 22.84 dB → 全量 26.674 dB / 0.9084，三种子）
+- [x] 阶段二 RGB / RGB+NIR 对照 + 逐餐盘配对 bootstrap 检验
+- [x] 消融：阶段二 B（非负输出）/ C（类别加权 CE）；阶段一锚点单因素消融（朝向 −7.73 dB、归一化 −5.59 dB）
+- [x] 五目标扩展（热量/重量/蛋白/碳水/脂肪）+ 12 类标签体系修正
+- [x] 在线 Flask 推理服务 + 微信小程序接入（模型来源可溯源、异常值不伪造）
+- [x] 答辩材料：18 页 PPT（含备注与配图）
+- [ ] 课程设计报告正文（13 节数据包已备齐：`docs/课程设计报告数据包_2026-09-10.md`）
+- [ ] B/C 消融补 2 个种子复核
+- [ ] 训练权重打包上传（本地约 1.6 GB / 6 个文件）
+- [ ] 后续：显式确定性设置降低运行噪声、多角度与真机评测集
+
+**明确不做**（已裁剪）：真机部署与公网发布、侧视角几何矫正、产品化加密/防抄设计（第五阶段）。
+
+## 诚实边界
+
+- **不得**声称「NIR 显著提升」——三种子符号翻转，换更强生成器后方向一致但 CI 仍跨零。
+- **不得**把论文数字与本项目数字直接相减 —— 生成器协议（论文仅背景区域）、数据域（实验相机 vs 手机照片）、
+  类别体系与 MAPE 的零值处理都不同。
+- **不得**声称「适合真实用户」——未做公网发布与真机验证；MAPE 只在非零子集（n=506）上成立。
+- 「蔬菜类偏置」**未解决**，只是被显式度量（准确率微升而 Macro-F1、平衡召回下降）。
+- 无测试支持的类别（`soup_stew` / `dessert` / `sauce_condiment`）不得宣称该类验收通过。
+
+## 参考
+
+- 论文：*Multi-Spectral Food Classification and Caloric Estimation Using Predicted Images*（Foods 2024, 13(4):551, PMC10887625）
+- 数据集：HSIFoodIngr-64、Nutrition5k、FoodData Central
+- 开源基线：CalorieCLIP（本地权重 strict 加载，仅输出热量，能力不等价 → 降级为参考行）
