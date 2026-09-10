@@ -89,43 +89,53 @@ def evaluate(tag, manifest_path, truth_schema, pred_schema):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--run', action='append', required=True,
-                    help='tag:manifest_path，可重复；manifest 为该模型训练时使用的清单')
+    ap.add_argument('--run', action='append', default=[],
+                    help='tag:manifest_path —— 该模型在**自己 schema 真值**下的指标（可重复）')
+    ap.add_argument('--cross', action='append', default=[],
+                    help='tag:model_manifest:truth_manifest —— 把 tag 的预测按 model_manifest 解释、'
+                         '在 truth_manifest 的真值下评估（可重复；用于跨 label_schema 对照）')
     ap.add_argument('--out', default=None)
     args = ap.parse_args()
+    if not args.run and not args.cross:
+        raise SystemExit('至少给一个 --run 或 --cross')
 
-    runs = []
+    report = {'runs': {}, 'schemas': {}, 'cross_evaluations': {}}
+
+    def schema(path, label):
+        if label not in report['schemas']:
+            s = load_schema(path)
+            report['schemas'][label] = {'manifest': s['path'], 'manifest_sha256': file_digest(s['path']),
+                                        'n_classes': len(s['names']), 'names': s['names']}
+        return load_schema(path)
+
     for spec in args.run:
         tag, _, manifest = spec.partition(':')
-        runs.append((tag, load_schema(manifest) if manifest else None))
         if not manifest:
-            raise SystemExit(f'{spec} 缺少 manifest 路径')
+            raise SystemExit(f'--run {spec} 缺少 manifest 路径')
+        model_schema = schema(manifest, f'{tag}_own')
+        report['runs'][tag] = evaluate(tag, manifest, model_schema, model_schema)
 
-    report = {'runs': {}, 'schemas': {}, 'comparisons': {}}
-    for tag, schema in runs:
-        report['schemas'][tag] = {'manifest': schema['path'],
-                                  'manifest_sha256': file_digest(schema['path']),
-                                  'n_classes': len(schema['names']), 'names': schema['names']}
-        report['runs'][tag] = evaluate(tag, schema['path'], schema, schema)
+    for spec in args.cross:
+        parts = spec.split(':')
+        if len(parts) != 3:
+            raise SystemExit(f'--cross {spec} 需要 tag:model_manifest:truth_manifest')
+        tag, model_manifest, truth_manifest = parts
+        model_schema = schema(model_manifest, f'{tag}_model')
+        truth_schema = schema(truth_manifest, 'truth_' + Path(truth_manifest).parent.name)
+        key = f'{tag}_evaluated_on_{Path(truth_manifest).parent.name}'
+        report['cross_evaluations'][key] = evaluate(tag, model_manifest, truth_schema, model_schema)
 
-    # 交叉口径：任何两个 schema 不同时，互相以对方真值评估
-    for tag_a, schema_a in runs:
-        for tag_b, schema_b in runs:
-            if tag_a == tag_b or schema_a['names'] == schema_b['names']:
-                continue
-            key = f'{tag_a}_evaluated_on_{tag_b}_truth'
-            report['comparisons'][key] = evaluate(tag_a, schema_a['path'], schema_b, schema_a)
-
-    out = Path(args.out) if args.out else ROOT / f'artifacts/schema-comparison-{tag_a}.json'
+    out = Path(args.out) if args.out else ROOT / 'artifacts/schema-comparison.json'
     atomic_json(out, report)
     print(f'证据: {out}')
     print(json.dumps({'own_schema': {t: {k: report['runs'][t][k] for k in
-                                         ('n', 'accuracy_over_all_dishes')} for t, _ in runs},
-                      'own_metrics': {t: report['runs'][t]['metrics_on_mappable_subset'] for t, _ in runs},
+                                         ('n', 'accuracy_over_all_dishes')} for t in report['runs']},
+                      'own_metrics': {t: report['runs'][t]['metrics_on_mappable_subset']
+                                      for t in report['runs']},
                       'cross': {k: {kk: v[kk] for kk in ('n', 'accuracy_over_all_dishes',
                                                          'n_unmappable_predictions',
                                                          'unmappable_classes')}
-                                for k, v in report['comparisons'].items()}},
+                                for k, v in report['cross_evaluations'].items()}},
                      ensure_ascii=False, indent=2))
 
 
