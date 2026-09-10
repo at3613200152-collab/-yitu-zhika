@@ -151,6 +151,9 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="每 epoch 最多 batch 数（0=不限，用于快速冒烟）")
     ap.add_argument("--manifest", default=str(MANIFEST))
     ap.add_argument("--tag", default="exp")
+    ap.add_argument("--generator", default=None,
+                    help="冻结生成器权重路径（默认用 train_meal_nir_official.GENERATOR；"
+                         "可指向全量数据版 checkpoints/hsi_full_v3/<tag>/best.pt）")
     args = ap.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
@@ -170,9 +173,18 @@ def main():
 
     set_base_seed(args.seed)
     generator_state = None
+    gen_path = Path(args.generator) if args.generator else GENERATOR
+    if not gen_path.is_absolute():
+        gen_path = ROOT / gen_path
     if args.mode == "rgbnir":
-        gen = torch.load(GENERATOR, map_location="cpu", weights_only=True)
-        generator_state = gen["G_state_dict"]
+        gen = torch.load(gen_path, map_location="cpu", weights_only=True)
+        generator_state = (gen.get("G_state_dict") or gen.get("model")
+                           or gen.get("model_state_dict"))
+        if generator_state is None:
+            raise SystemExit(f"无法从 {gen_path} 解析生成器权重（期望 G_state_dict / model）")
+        print(json.dumps({"stage": "generator_loaded", "path": str(gen_path),
+                          "sha256": file_digest(gen_path)[:16],
+                          "keys": len(generator_state)}), flush=True)
 
     model = build_model(manifest, args.mode, generator_state, args.joint_generator).cuda()
     optimizer = make_optimizer(model, args)
@@ -186,8 +198,8 @@ def main():
         "manifest": str(Path(args.manifest)),
         "manifest_sha256": file_digest(Path(args.manifest)),
         "code_sha256": file_digest(Path(__file__)),
-        "generator": str(GENERATOR.relative_to(ROOT)) if args.mode == "rgbnir" else None,
-        "generator_sha256": file_digest(GENERATOR) if args.mode == "rgbnir" else None,
+        "generator": str(gen_path.relative_to(ROOT)) if (args.mode == "rgbnir" and gen_path.is_relative_to(ROOT)) else (str(gen_path) if args.mode == "rgbnir" else None),
+        "generator_sha256": file_digest(gen_path) if args.mode == "rgbnir" else None,
         "sampler_seed_base": args.seed,
         "sampler_rule": "seed_epoch(epoch) 全局种子 + DataLoader 生成器 manual_seed(seed+epoch)",
     }
