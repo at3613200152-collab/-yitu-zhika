@@ -29,7 +29,7 @@ class PredictionContract:
     # 核心字段
     calories_kcal: float        # 总热量，单位 kcal
     weight_g: float             # 总重量，单位 g
-    category_name: str          # 中文粗类别名（11 类之一）
+    category_name: str          # 中文粗类别名（label_schema 决定类别数：v1=11 类，v2=12 类含水果）
     category_prob: float        # 模型分数，未校准
 
     # 模型版本溯源
@@ -62,6 +62,10 @@ class PredictionContract:
     macros_source: str = "model_not_supported"
     category_prob_note: str = "模型置信度，非识别准确率"
 
+    # 标签体系溯源（label_schema v2）：类别集合可能随版本变化，需与权重同步（11 类 / 12 类）
+    label_schema: str | None = None
+    category_manifest: str | None = None
+
     # NIR 图（不序列化，仅 Demo 用）
     nir_image_b64: str | None = None
 
@@ -82,6 +86,8 @@ class PredictionContract:
             macros_unit=result.get("macros_unit", "g"),
             macros_source=result.get("macros_source", "model_not_supported"),
             category_prob_note=result.get("category_prob_note", "模型置信度，非识别准确率"),
+            label_schema=result.get("label_schema"),
+            category_manifest=result.get("category_manifest"),
             inference_precision=result.get("inference_precision", "FP32"),
             device=result.get("device", "cpu"),
             status=InferenceStatus.OK.value,
@@ -104,6 +110,8 @@ class PredictionContract:
             "source_model_sha256_prefix": self.source_model_sha256_prefix,
             "rgb_model_version": self.rgb_model_version,
             "target_names": self.target_names,
+            "label_schema": self.label_schema,
+            "category_manifest": self.category_manifest,
             "macros": {
                 "status": self.macros_status,
                 "unit": self.macros_unit,
