@@ -36,6 +36,13 @@ WEIGHTS_DIR = ROOT / 'checkpoints/meal_macros_v1'
 RESULT_DIR = ROOT / 'results/meal_macros_train_v1'
 
 
+def _atomic_save(payload, path):
+    """原子保存：先写 .tmp 再替换，避免中断留下半写文件。"""
+    tmp = path.with_suffix('.tmp')
+    torch.save(payload, tmp)
+    tmp.replace(path)
+
+
 class MacrosDataset(MealDataset):
     def __getitem__(self, index):
         rgb, targets, category, dish_id = super().__getitem__(index)
@@ -116,6 +123,7 @@ def main():
     ap.add_argument('--smoke', action='store_true')
     ap.add_argument('--init-from', default=None, help='官方 2 目标权重, 用于迁移特征层')
     ap.add_argument('--manifest', default=str(MANIFEST), help='五目标 manifest(默认 meal_macros_v1; P1-C 用 meal_macros_expanded_v1)')
+    ap.add_argument('--resume', action='store_true', help='显式续跑: 从 last.pt 恢复(需要 --tag 已有未完成产物)')
     args = ap.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text(encoding='utf-8'))
@@ -123,8 +131,17 @@ def main():
     WEIGHTS_DIR.mkdir(parents=True, exist_ok=True)
     RESULT_DIR.mkdir(parents=True, exist_ok=True)
     out = RESULT_DIR / args.tag
-    out.mkdir(parents=True, exist_ok=True)
     wgt = WEIGHTS_DIR / args.tag
+
+    # 防覆盖（整改清单 §6.2）：非空输出目录必须显式 --resume；否则拒绝，不用同命令静默覆盖
+    def _nonempty(p):
+        return p.exists() and any(p.iterdir())
+    if not args.smoke and not args.resume and (_nonempty(out) or _nonempty(wgt)):
+        raise SystemExit(
+            f'[拒绝覆盖] 输出目录已存在且非空: {out} / {wgt}。'
+            f'请使用新的 --tag，或确认要续跑时显式加 --resume。')
+
+    out.mkdir(parents=True, exist_ok=True)
     wgt.mkdir(parents=True, exist_ok=True)
     state = {'pid': os_pid(), 'protocol': 'meal_macros_v1', 'tag': args.tag, 'seed': args.seed}
 
@@ -162,8 +179,34 @@ def main():
 
     best, best_epoch = float('inf'), 0
     history = []
+    start_epoch = 1
+    if args.resume:
+        last_path = wgt / 'last.pt'
+        if not last_path.exists():
+            raise SystemExit(f'[--resume] 缺少 {last_path}，无法续跑（请新建 --tag）')
+        # last.pt 含 optimizer/numpy 随机状态，weights_only=True 无法反序列化；
+        # 这是本机训练自己写出的受信文件，故显式 weights_only=False。
+        st = torch.load(last_path, map_location='cpu', weights_only=False)
+        if st.get('config', {}).get('protocol') not in (None, 'meal_macros_v1'):
+            raise SystemExit('[--resume] last.pt 协议不匹配，拒绝续跑；请新建 --tag')
+        if st.get('config', {}).get('manifest_sha256') and st['config']['manifest_sha256'] != file_digest(manifest_path):
+            raise SystemExit('[--resume] manifest 已变化，拒绝在旧产物上续跑；请新建 --tag')
+        model.load_state_dict(st['model'], strict=True)
+        if 'optimizer' in st:
+            optimizer.load_state_dict(st['optimizer'])
+        start_epoch = int(st['epoch']) + 1
+        best, best_epoch = st.get('best', float('inf')), st.get('best_epoch', 0)
+        history = list(st.get('history', []))
+        rng = st.get('rng')
+        if rng:
+            import random as _r
+            _r.setstate(rng['python'])
+            np.random.set_state(rng['numpy'])
+            torch.set_rng_state(rng['torch'])
+        report(stage='resumed', next_epoch=start_epoch, epochs_planned=args.epochs)
+
     begun = time.monotonic()
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         if time.monotonic() - begun > 8 * 3600:
             report(stage='paused_budget'); return
         seed_epoch(epoch)
@@ -173,12 +216,24 @@ def main():
         if improved:
             best, best_epoch = va['reg_normalized_l1'], epoch
         history.append({'epoch': epoch, 'train': tr, 'val': va})
-        payload = {'model': model.state_dict(), 'epoch': epoch, 'best': best, 'best_epoch': best_epoch,
-                   'history': history, 'config': {'tag': args.tag, 'seed': args.seed, 'epochs': args.epochs,
-                                                  'batch': args.batch, 'protocol': 'meal_macros_v1'}}
+        # 两种产物分离（§6.2）：
+        # - best.pt 必须能用 weights_only=True 加载（推理侧/评估侧只读它），因此只放张量+标量；
+        # - last.pt 是续跑产物，含 optimizer/numpy 随机状态（weights_only 不允许的对象），
+        #   由 --resume 以 weights_only=False 读取本地受信文件。
+        import random as _rng
+        config = {'tag': args.tag, 'seed': args.seed, 'epochs': args.epochs,
+                  'batch': args.batch, 'protocol': 'meal_macros_v1',
+                  'manifest_sha256': file_digest(manifest_path),
+                  'code_sha256': file_digest(Path(__file__))}
+        payload = {'model': model.state_dict(),
+                   'epoch': epoch, 'best': best, 'best_epoch': best_epoch,
+                   'config': config}
         if improved:
-            torch.save(payload, wgt / 'best.pt')
-        torch.save(payload, wgt / 'last.pt')
+            _atomic_save(payload, wgt / 'best.pt')
+        resume_payload = dict(payload, optimizer=optimizer.state_dict(), history=history,
+                              rng={'python': _rng.getstate(), 'numpy': np.random.get_state(),
+                                   'torch': torch.get_rng_state()})
+        _atomic_save(resume_payload, wgt / 'last.pt')
         atomic_json(out / 'epochs.json', history)
         report(stage='epoch_complete', epoch=epoch, best_epoch=best_epoch,
                reg_norm=va['reg_normalized_l1'], val_kcal_mae=va['per_field']['calories']['mae'])
