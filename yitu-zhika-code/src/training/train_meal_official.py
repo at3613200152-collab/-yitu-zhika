@@ -146,7 +146,8 @@ def epoch_pass(model,manifest,split,epoch,batch_size,report,optimizer=None,max_b
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True)
                 optimizer.step()
-        size = len(ids)
+        size = len(dish_ids)   # 修正（2026-09-10）：原先 len(ids) 为累计列表，导致第 1 批权重 0、后批递增，
+                               # 使 epoch 级 loss/reg 指标与"验证选模"依据被错误加权（测试指标由逐盘预测计算，不受影响）
         n += size
         total += loss.item()*size
         reg_total += reg.item()*size

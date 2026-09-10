@@ -82,7 +82,8 @@ def epoch_pass(model, manifest, split, epoch, args, optimizer=None):
         with torch.set_grad_enabled(training):
             with torch.autocast('cuda', dtype=torch.bfloat16):
                 logits, prediction = model(images)
-            loss, reg = macros_losses(logits, prediction, target, cls, model.target_scale, mask)
+            loss, reg = macros_losses(logits, prediction, target, cls, model.target_scale, mask,
+                                      class_weight=getattr(args, 'class_weight_tensor', None))
             if training:
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
@@ -125,6 +126,10 @@ def main():
     ap.add_argument('--init-from', default=None, help='官方 2 目标权重, 用于迁移特征层')
     ap.add_argument('--manifest', default=str(MANIFEST), help='五目标 manifest(默认 meal_macros_v1; P1-C 用 meal_macros_expanded_v1)')
     ap.add_argument('--resume', action='store_true', help='显式续跑: 从 last.pt 恢复(需要 --tag 已有未完成产物)')
+    ap.add_argument('--nonneg-output', action='store_true',
+                    help='方案 §7.1 B：五目标用 softplus 参数化（输出恒非负）')
+    ap.add_argument('--class-weight-ce', action='store_true',
+                    help='方案 §7.1 C：分类头用逐类权重 CE（频率平方根倒数、封顶 4.0）')
     args = ap.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text(encoding='utf-8'))
@@ -152,7 +157,15 @@ def main():
         print(json.dumps(values), flush=True)
 
     set_base_seed(args.seed)
-    model = MealMacrosNet(manifest, pretrained=True, input_channels=3).cuda()
+    model = MealMacrosNet(manifest, pretrained=True, input_channels=3,
+                          nonneg=args.nonneg_output).cuda()
+    # 方案 §7.1 C：逐类权重 CE（权重来自 train 划分，先定后看，不按测试集调参）
+    class_weight = None
+    if args.class_weight_ce:
+        from src.training.meal_ablation_core import class_weights_from_manifest
+        class_weight, weight_info = class_weights_from_manifest(manifest, device='cuda')
+        args.class_weight_tensor = class_weight
+        print(json.dumps({'stage': 'class_weight', **weight_info}), flush=True)
     feature_params = list(model.network.features.parameters())
     feature_ids = {id(p) for p in feature_params}
     head_params = [p for p in model.parameters() if p.requires_grad and id(p) not in feature_ids]
@@ -227,6 +240,8 @@ def main():
                   'num_classes': len(manifest['category_to_idx']),
                   'label_schema_version': manifest.get('label_schema_version', 'v1_11class'),
                   'sampler_seed_base': args.seed,
+                  'nonneg_output': bool(args.nonneg_output),
+                  'class_weight_ce': bool(args.class_weight_ce),
                   'sampler_rule': 'seed_epoch(epoch) 全局种子 + DataLoader 生成器 manual_seed(seed+epoch)',
                   'manifest': str(manifest_path),
                   'manifest_sha256': file_digest(manifest_path),
