@@ -13,11 +13,35 @@
       ]
     },
     {
+      "title": "一、项目背景：为什么要把近红外「预测」出来",
+      "notes": "这一页对应题设的前两句：题设要求复现「用预测图像做多光谱食物分类与热量估计」的两阶段框架。先讲清它要解决什么现实问题、论文的关键主张是什么，再引出我们给自己加的验证任务（后面第 3/5 部分展开）。如果老师问「为什么不用真 NIR」，答案就在右下角第三条：手机端拿不到、且需要配准。",
+      "shapes": [
+        {"type": "bullets", "left": 40, "top": 84, "width": 430, "height": 344, "items": [
+          {"text": "现实需求与纯 RGB 的天花板", "level": 0, "bold": true},
+          {"text": "饮食管理依赖准确的热量/营养记录，但人工记录依从性低、估算误差大", "level": 1},
+          {"text": "拍照估算（纯 RGB）是主流方案，可 RGB 本身信息不足：同色不同营养（如油炸 vs 水煮）、份量与遮挡歧义、光照与白平衡敏感", "level": 1},
+          {"text": "近红外对水分、脂肪等成分有物理敏感性 → 多光谱理论上能补上这部分信息", "level": 1},
+          {"text": "可真实采集 NIR 需要专用传感器 + RGB/NIR 配准，手机端成本高、数据不可得", "level": 1}
+        ]},
+        {"type": "bullets", "left": 490, "top": 84, "width": 430, "height": 344, "items": [
+          {"text": "论文主张 → 课设题设", "level": 0, "bold": true},
+          {"text": "论文主张：不采真实 NIR，而是先训一个 RGB→NIR 生成器「预测」出 860 nm 图像，再与 RGB 拼成多通道送入多任务网络", "level": 1},
+          {"text": "两阶段：① HSIFoodIngr-64 上训生成器（PSNR/SSIM 评估）② Nutrition5k 上做分类 + 热量/重量回归（CE + L1/MAPE）", "level": 1},
+          {"text": "题设要求：复现上述两阶段，并附纯 RGB 开源基线对照、消融实验、演示应用、源代码仓库、模型权重与课程设计报告", "level": 1},
+          {"text": "本项目的定位是「复现 + 验证」：不只跑出数字，还要回答论文前提在我方数据与算力条件下是否成立", "level": 1}
+        ]},
+        {"type": "caption", "left": 40, "top": 432, "width": 880, "height": 54, "font_size": 12,
+         "text": "由此归纳出本项目的三个核心问题：① 生成器能学到什么质量——靠数据规模还是靠数据锚点？② 预测出来的 NIR 到底有没有用——需要多种子配对检验，不能只看单次运行；③ 能否落成一个可演示、可溯源的系统？"},
+        {"type": "caption", "left": 40, "top": 488, "width": 880, "height": 18, "font_size": 10,
+         "text": "论文：Multi-Spectral Food Classification and Caloric Estimation Using Predicted Images（Foods 2024, 13(4):551）"}
+      ]
+    },
+    {
       "title": "汇报提纲",
       "notes": "六部分，重点在 3/4/5（复现结果与消融）。",
       "shapes": [
         {"type": "bullets", "left": 80, "top": 110, "width": 800, "height": 360, "items": [
-          {"text": "一、课题要求与交付物", "level": 0},
+          {"text": "一、项目背景、课题要求与交付物", "level": 0},
           {"text": "二、论文方法与我们的两条复现路径", "level": 0},
           {"text": "三、阶段一：RGB→NIR 生成器（结果 + 数据规模与锚点结论）", "level": 0},
           {"text": "四、阶段二：多通道多任务（结果 + 基线对比）", "level": 0},
